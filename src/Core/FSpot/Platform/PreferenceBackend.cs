@@ -38,7 +38,7 @@ using FSpot.Settings;
 
 namespace FSpot.Platform
 {
-	class PreferenceBackend
+	internal class PreferenceBackend
 	{
 		internal const string SettingsRoot = "FSpotSettings";
 		internal static string PreferenceLocationOverride = null;
@@ -52,7 +52,7 @@ namespace FSpot.Platform
 		public PreferenceBackend ()
 		{
 			if (string.IsNullOrWhiteSpace (PreferenceLocationOverride))
-				SettingsFile = Path.Combine (FSpotConfiguration.BaseDirectory, FSpotConfiguration.SettingsName);
+				SettingsFile = Path.Combine (Configuration.BaseDirectory, Configuration.SettingsName);
 			else
 				SettingsFile = PreferenceLocationOverride;
 		}

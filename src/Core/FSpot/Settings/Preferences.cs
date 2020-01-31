@@ -82,7 +82,7 @@ namespace FSpot.Settings
 			{ ImportGuiRollHistory, 10 },
 			{ ScreensaverTag, 1 },
 			{ ScreensaverDelay, 4.0 },
-			{ StoragePath, Path.Combine(FSpotConfiguration.HomeDirectory, Catalog.GetString ("Photos")) },
+			{ StoragePath, Path.Combine(Configuration.HomeDirectory, Catalog.GetString ("Photos")) },
 			{ ExportEmailSize, 3 }, // medium size 640px
 			{ ExportEmailRotate, true },
 			{ ViewerInterpolation, true },

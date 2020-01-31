@@ -1,74 +1,38 @@
-//
-// TagStore.cs
-//
-// Author:
-//   Daniel Köb <daniel.koeb@peony.at>
-//   Ettore Perazzoli <ettore@src.gnome.org>
-//   Stephane Delcroix <stephane@delcroix.org>
-//   Larry Ewing <lewing@novell.com>
-//
 // Copyright (C) 2016 Daniel Köb
 // Copyright (C) 2003-2009 Novell, Inc.
 // Copyright (C) 2003 Ettore Perazzoli
 // Copyright (C) 2007-2009 Stephane Delcroix
 // Copyright (C) 2004-2006 Larry Ewing
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using FSpot;
-using FSpot.Core;
-using FSpot.Database.Jobs;
-using FSpot.Query;
-using FSpot.Settings;
-using FSpot.Utils;
+using System.Linq;
+
+using FSpot.Models;
+
 using Hyena;
-using Hyena.Data.Sqlite;
+
 using Mono.Unix;
 
 namespace FSpot.Database
 {
-	public class InvalidTagOperationException : InvalidOperationException {
+	public class InvalidTagOperationException : InvalidOperationException
+	{
+		public Tag Tag { get; }
 
 		public InvalidTagOperationException (Tag t, string message) : base (message)
 		{
 			Tag = t;
 		}
-
-		public Tag Tag { get; set; }
 	}
 
 	// Sorts tags into an order that it will be safe to delete
 	// them in (eg children first).
-	public class TagRemoveComparer : IComparer {
-		public int Compare (object obj1, object obj2)
-		{
-			Tag t1 = obj1 as Tag;
-			Tag t2 = obj2 as Tag;
-
-			return Compare (t1, t2);
-		}
-
+	public class TagRemoveComparer : IComparer<Tag>
+	{
 		public int Compare (Tag t1, Tag t2)
 		{
 			if (t1.IsAncestorOf (t2))
@@ -81,67 +45,62 @@ namespace FSpot.Database
 		}
 	}
 
-	public class TagStore : DbStore<Tag>, IDisposable
+	public class TagStore : DbStore<Tag>
 	{
-		bool disposed;
+		const string StockIconDbPrefix = "stock_icon:";
+
 		Tag hidden;
 
-		public Category RootCategory { get; private set; }
+		public Category RootCategory { get; }
+
 		public Tag Hidden {
 			get { return hidden; }
 			private set {
 				hidden = value;
-				HiddenTag.Tag = value;
+				// FIXME, where did HiddenTag go?
+				//HiddenTag.Tag = value;
 			}
 		}
-		const string STOCK_ICON_DB_PREFIX = "stock_icon:";
 
-		static void SetIconFromString (Tag tag, string iconString)
-		{
-			if (iconString == null) {
-				tag.Icon = null;
-				// IconWasCleared automatically set already, override
-				// it in this case since it was NULL in the db.
-				tag.IconWasCleared = false;
-			} else if (iconString == string.Empty)
-				tag.Icon = null;
-			else if (iconString.StartsWith (STOCK_ICON_DB_PREFIX, StringComparison.Ordinal))
-				tag.ThemeIconName = iconString.Substring (STOCK_ICON_DB_PREFIX.Length);
-			else
-				tag.Icon = GdkUtils.Deserialize (Convert.FromBase64String (iconString));
-		}
+		//static void SetIconFromString (Tag tag, string iconString)
+		//{
+		//	if (iconString == null) {
+		//		tag.Icon = null;
+		//		// IconWasCleared automatically set already, override
+		//		// it in this case since it was NULL in the db.
+		//		tag.IconWasCleared = false;
+		//	} else if (string.IsNullOrEmpty (iconString))
+		//		tag.Icon = null;
+		//	else if (iconString.StartsWith (StockIconDbPrefix, StringComparison.Ordinal))
+		//		tag.Icon = iconString.Substring (StockIconDbPrefix.Length);
+		//	else
+		//		tag.Icon = GdkUtils.Deserialize (Convert.FromBase64String (iconString));
+		//}
 
 		public Tag GetTagByName (string name)
 		{
-			foreach (Tag t in item_cache.Values)
-				if (t.Name.ToLower () == name.ToLower ())
-					return t;
-
-			return null;
+			var tag = Context.Tags.FirstOrDefault (x => string.Compare (x.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
+			return tag;
 		}
 
-		public Tag GetTagById (int id)
+		public Tag GetTagById (Guid id)
 		{
-			foreach (Tag t in item_cache.Values)
-				if (t.Id == id)
-					return t;
-			return null;
+			var tag = Context.Tags.FirstOrDefault (x => x.Id == id);
+			return tag;
 		}
 
-		public Tag [] GetTagsByNameStart (string s)
+		public List<Tag> TagsStartWith (string s)
 		{
-			List <Tag> l = new List<Tag> ();
-			foreach (Tag t in item_cache.Values) {
-				if (t.Name.ToLower ().StartsWith (s.ToLower ()))
-					l.Add (t);
-			}
+			var tags = Context.Tags
+				.Where (x => s.ToLower ().StartsWith (x.Name.ToLower ()))
+				.ToList ();
 
-			if (l.Count == 0)
+			if (!tags.Any())
 				return null;
 
-			l.Sort ((t1, t2) => t2.Popularity.CompareTo (t1.Popularity));
+			tags.Sort ((t1, t2) => t2.Popularity.CompareTo (t1.Popularity));
 
-			return l.ToArray ();
+			return tags;
 		}
 
 		// In this store we keep all the items (i.e. the tags) in memory at all times.  This is
@@ -150,143 +109,80 @@ namespace FSpot.Database
 		// base class.
 		void LoadAllTags ()
 		{
-
 			// Pass 1, get all the tags.
+			var tags = Context.Tags;
+			//IDataReader reader = Database.Query ("SELECT id, name, is_category, sort_priority, icon FROM tags");
 
-			IDataReader reader = Database.Query ("SELECT id, name, is_category, sort_priority, icon FROM tags");
+			foreach (var tag in tags) { }
+			//while (reader.Read ()) {
+			//	uint id = Convert.ToUInt32 (reader["id"]);
+			//	string name = reader["name"].ToString ();
+			//	bool is_category = (Convert.ToUInt32 (reader["is_category"]) != 0);
 
-			while (reader.Read ()) {
-				uint id = Convert.ToUInt32 (reader ["id"]);
-				string name = reader ["name"].ToString ();
-				bool is_category = (Convert.ToUInt32 (reader ["is_category"]) != 0);
+			//	Tag tag;
+			//	if (is_category)
+			//		tag = new Category (null, id, name);
+			//	else
+			//		tag = new Tag (null, id, name);
 
-				Tag tag;
-				if (is_category)
-					tag = new Category (null, id, name);
-				else
-					tag = new Tag (null, id, name);
+			//	if (reader["icon"] != null)
+			//		try {
+			//			SetIconFromString (tag, reader["icon"].ToString ());
+			//		} catch (Exception ex) {
+			//			Log.Exception ("Unable to load icon for tag " + name, ex);
+			//		}
 
-				if (reader ["icon"] != null)
-					try {
-						SetIconFromString (tag, reader ["icon"].ToString ());
-					} catch (Exception ex) {
-						Log.Exception ("Unable to load icon for tag " + name, ex);
-					}
-
-				tag.SortPriority = Convert.ToInt32 (reader["sort_priority"]);
-				AddToCache (tag);
-			}
-
-			reader.Dispose ();
+			//	tag.SortPriority = Convert.ToInt32 (reader["sort_priority"]);
+			//}
 
 			// Pass 2, set the parents.
-			reader = Database.Query ("SELECT id, category_id FROM tags");
-
-			while (reader.Read ()) {
-				uint id = Convert.ToUInt32 (reader ["id"]);
-				uint category_id = Convert.ToUInt32 (reader ["category_id"]);
-
-				Tag tag = Get (id);
-				if (tag == null)
-					throw new Exception (string.Format ("Cannot find tag {0}", id));
-				if (category_id == 0)
+			foreach (var tag in tags) {
+				if (tag.CategoryId == Guid.Empty)
 					tag.Category = RootCategory;
 				else {
-					tag.Category = Get (category_id) as Category;
+					tag.Category = Get (tag.CategoryId) as Category;
 					if (tag.Category == null)
 						Log.Warning ("Tag Without category found");
 				}
-
 			}
-			reader.Dispose ();
 
 			//Pass 3, set popularity
-			reader = Database.Query ("SELECT tag_id, COUNT (*) AS popularity FROM photo_tags GROUP BY tag_id");
-			while (reader.Read ()) {
-				Tag t = Get (Convert.ToUInt32 (reader ["tag_id"]));
-				if (t != null)
-					t.Popularity = Convert.ToInt32 (reader ["popularity"]);
+			var groups = Context.PhotoTags
+				.GroupBy (x => x.TagId)
+				.Select (n => new {
+					TagId = n.Key,
+					PhotoCount = n.Count ()
+				});
+
+			foreach (var tag in tags) {
+				tag.Popularity = groups.First (x => x.TagId == tag.Id).PhotoCount;
 			}
-			reader.Dispose ();
 
-			if (Db.Meta.HiddenTagId.Value != null)
-				Hidden = LookupInCache ((uint)Db.Meta.HiddenTagId.ValueAsInt);
+			//if (Context.Meta.HiddenTagId.Value != null)
+			//	Hidden = LookupInCache ((uint)Db.Meta.HiddenTagId.ValueAsInt);
 		}
 
-		void CreateTable ()
-		{
-			Database.Execute (
-				"CREATE TABLE tags (\n" +
-				"	id		INTEGER PRIMARY KEY NOT NULL, \n" +
-				"	name		TEXT UNIQUE, \n" +
-				"	category_id	INTEGER, \n" +
-				"	is_category	BOOLEAN, \n" +
-				"	sort_priority	INTEGER, \n" +
-				"	icon		TEXT\n" +
-				")");
-		}
-
-		void CreateDefaultTags ()
-		{
-			Category favorites_category = CreateCategory (RootCategory, Catalog.GetString ("Favorites"), false);
-			favorites_category.ThemeIconName = "emblem-favorite";
-			favorites_category.SortPriority = -10;
-			Commit (favorites_category);
-
-			Tag hidden_tag = CreateTag (RootCategory, Catalog.GetString ("Hidden"), false);
-			hidden_tag.ThemeIconName = "emblem-readonly";
-			hidden_tag.SortPriority = -9;
-			Hidden = hidden_tag;
-			Commit (hidden_tag);
-			Db.Meta.HiddenTagId.ValueAsInt = (int) hidden_tag.Id;
-			Db.Meta.Commit (Db.Meta.HiddenTagId);
-
-			Tag people_category = CreateCategory (RootCategory, Catalog.GetString ("People"), false);
-			people_category.ThemeIconName = "emblem-people";
-			people_category.SortPriority = -8;
-			Commit (people_category);
-
-			Tag places_category = CreateCategory (RootCategory, Catalog.GetString ("Places"), false);
-			places_category.ThemeIconName = "emblem-places";
-			places_category.SortPriority = -8;
-			Commit (places_category);
-
-			Tag events_category = CreateCategory (RootCategory, Catalog.GetString ("Events"), false);
-			events_category.ThemeIconName = "emblem-event";
-			events_category.SortPriority = -7;
-			Commit (events_category);
-		}
-
-		// Constructor
-		public TagStore (IDb db, bool isNew)
-			: base (db, true)
+		public TagStore ()
 		{
 			// The label for the root category is used in new and edit tag dialogs
-			RootCategory = new Category (null, 0, Catalog.GetString ("(None)"));
-
-			if (! isNew) {
-				LoadAllTags ();
-			} else {
-				CreateTable ();
-				CreateDefaultTags ();
-			}
+			RootCategory = new Category (null, Guid.Empty, Catalog.GetString ("(None)"));
 		}
 
-		uint InsertTagIntoTable (Category parentCategory, string name, bool isCategory, bool autoicon)
+		Tag InsertTagIntoTable (Category parentCategory, string name, bool isCategory, bool autoicon)
 		{
-	
-			uint parent_category_id = parentCategory.Id;
-			String default_tag_icon_value = autoicon ? null : string.Empty;
-	
-			long id = Database.Execute (new HyenaSqliteCommand ("INSERT INTO tags (name, category_id, is_category, sort_priority, icon)"
-				+ "VALUES (?, ?, ?, 0, ?)",
-				name,
-				parent_category_id,
-				isCategory ? 1 : 0,
-				default_tag_icon_value));
+			var tag = new Tag (parentCategory) {
+				Name = name,
+				IsCategory = isCategory,
+				CategoryId = parentCategory.Id,
+				Icon = autoicon ? null : string.Empty,
+				SortPriority = 0
+			};
+
+			Context.Tags.Add (tag);
+			Context.SaveChanges ();
 
 			// The table in the database is setup to be an INTEGER.
-			return (uint) id;
+			return tag;
 		}
 
 		public Tag CreateTag (Category category, string name, bool autoicon)
@@ -294,12 +190,9 @@ namespace FSpot.Database
 			if (category == null)
 				category = RootCategory;
 
-			uint id = InsertTagIntoTable (category, name, false, autoicon);
-
-			Tag tag = new Tag (category, id, name);
+			var tag = InsertTagIntoTable (category, name, false, autoicon);
 			tag.IconWasCleared = !autoicon;
 
-			AddToCache (tag);
 			EmitAdded (tag);
 
 			return tag;
@@ -310,51 +203,49 @@ namespace FSpot.Database
 			if (parentCategory == null)
 				parentCategory = RootCategory;
 
-			uint id = InsertTagIntoTable (parentCategory, name, true, autoicon);
+			var tag = InsertTagIntoTable (parentCategory, name, true, autoicon);
 
-			Category new_category = new Category (parentCategory, id, name);
-			new_category.IconWasCleared = !autoicon;
+			tag.IconWasCleared = !autoicon;
 
-			AddToCache (new_category);
-			EmitAdded (new_category);
+			EmitAdded (tag);
 
-			return new_category;
+			return tag as Category;
 		}
 
-		public override Tag Get (uint id)
+		public override Tag Get (Guid id)
 		{
-		    return id == 0 ? RootCategory : LookupInCache (id);
+			return id == Guid.Empty ? RootCategory : Context.Tags.FirstOrDefault (x => x.Id == id);
 		}
 
 		public override void Remove (Tag item)
 		{
-			Category category = item as Category;
-			if (category != null &&
-				category.Children != null &&
-				category.Children.Count > 0)
+			var category = item as Category;
+			if (category?.Children?.Count > 0)
 				throw new InvalidTagOperationException (category, "Cannot remove category that contains children");
 
-			RemoveFromCache (item);
+			//Why set this to null ?
+			//item.Category = null;
 
-			item.Category = null;
-
-			Database.Execute (new HyenaSqliteCommand ("DELETE FROM tags WHERE id = ?", item.Id));
+			Context.Remove (item);
+			Context.SaveChanges ();
 
 			EmitRemoved (item);
 		}
 
 		string GetIconString (Tag tag)
 		{
-			if (tag.ThemeIconName != null)
-				return STOCK_ICON_DB_PREFIX + tag.ThemeIconName;
-			if (tag.Icon == null) {
-				if (tag.IconWasCleared)
-					return string.Empty;
-				return null;
-			}
+			//if (tag.ThemeIconName != null)
+			//	return StockIconDbPrefix + tag.Icon;
 
-			byte [] data = GdkUtils.Serialize (tag.Icon);
-			return Convert.ToBase64String (data);
+			//if (tag.Icon == null) {
+			//	if (tag.IconWasCleared)
+			//		return string.Empty;
+			//	return null;
+			//}
+
+			//byte[] data = GdkUtils.Serialize (tag.Icon);
+			//return Convert.ToBase64String (data);
+			return string.Empty;
 		}
 
 		public override void Commit (Tag item)
@@ -362,78 +253,34 @@ namespace FSpot.Database
 			Commit (item, false);
 		}
 
-		public void Commit (Tag tag, bool updateXmp)
+		public void Commit (Tag tag, bool updateXmp = false)
 		{
-			Commit (new Tag[] {tag}, updateXmp);
+			Commit (new[] { tag }, updateXmp);
 		}
 
-		public void Commit (Tag [] tags, bool updateXmp)
+		public void Commit (Tag[] tags, bool updateXmp)
 		{
-			// TODO.
-			bool use_transactions = updateXmp;//!Database.InTransaction && update_xmp;
+			//foreach (Tag tag in tags) {
+			//	Database.Execute (new HyenaSqliteCommand ("UPDATE tags SET name = ?, category_id = ?, "
+			//				+ "is_category = ?, sort_priority = ?, icon = ? WHERE id = ?",
+			//					  tag.Name,
+			//					  tag.Category.Id,
+			//					  tag is Category ? 1 : 0,
+			//					  tag.SortPriority,
+			//					  GetIconString (tag),
+			//					  tag.Id));
 
-			//if (use_transactions)
-			//	Database.BeginTransaction ();
+			//	if (updateXmp && Preferences.Get<bool> (Preferences.MetadataEmbedInImage)) {
+			//		Photo[] photos = Db.Photos.Query (new TagTerm (tag));
+			//		foreach (Photo p in photos)
+			//			if (p.HasTag (tag)) // the query returns all the pics of the tag and all its child. this avoids updating child tags
+			//				SyncMetadataJob.Create (Db.Jobs, p);
+			//	}
+			//	context.Tags.AddRange (tag);
+			//}
+			//context.SaveChanges ();
 
-			// FIXME: this hack is used, because HyenaSqliteConnection does not support
-			// the InTransaction propery
-
-			if (use_transactions) {
-				try {
-					Database.BeginTransaction ();
-				} catch {
-					use_transactions = false;
-				}
-			}
-
-			foreach (Tag tag in tags) {
-				Database.Execute (new HyenaSqliteCommand ("UPDATE tags SET name = ?, category_id = ?, "
-							+ "is_category = ?, sort_priority = ?, icon = ? WHERE id = ?",
-								  tag.Name,
-								  tag.Category.Id,
-								  tag is Category ? 1 : 0,
-								  tag.SortPriority,
-								  GetIconString (tag),
-								  tag.Id));
-	
-				if (updateXmp && Preferences.Get<bool> (Preferences.MetadataEmbedInImage)) {
-					Photo [] photos = Db.Photos.Query (new TagTerm (tag));
-					foreach (Photo p in photos)
-						if (p.HasTag (tag)) // the query returns all the pics of the tag and all its child. this avoids updating child tags
-							SyncMetadataJob.Create (Db.Jobs, p);
-				}
-			}
-
-			if (use_transactions)
-				Database.CommitTransaction ();
-
-			EmitChanged (tags);
-		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		protected virtual void Dispose(bool disposing)
-		{
-			if (disposed)
-				return;
-			disposed = true;
-
-			if (disposing) {
-				// free managed resources
-				foreach (Tag tag in item_cache.Values) {
-					tag.Dispose ();
-				}
-				item_cache.Clear ();
-				if (RootCategory != null) {
-					RootCategory.Dispose ();
-					RootCategory = null;
-				}
-			}
-			// free unmanaged resources
+			//EmitChanged (tags);
 		}
 	}
 }

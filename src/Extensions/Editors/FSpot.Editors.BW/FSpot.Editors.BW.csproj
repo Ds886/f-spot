@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(FSpotTargetFramework)</TargetFramework>
+    <TargetFramework>$(FSpotTF)</TargetFramework>
     <OutputPath>..\..\..\..\bin\Extensions</OutputPath>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <AssemblySearchPaths>$(AssemblySearchPaths);{GAC}</AssemblySearchPaths>

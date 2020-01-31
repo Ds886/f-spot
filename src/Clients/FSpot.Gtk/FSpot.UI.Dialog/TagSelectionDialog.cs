@@ -33,8 +33,8 @@
 
 using Gtk;
 
-using FSpot.Core;
 using FSpot.Database;
+using FSpot.Models;
 
 namespace FSpot.UI.Dialog
 {
@@ -44,20 +44,20 @@ namespace FSpot.UI.Dialog
 		[GtkBeans.Builder.Object] Gtk.ScrolledWindow tag_selection_scrolled;
 #pragma warning restore 649
 
-		TagSelectionWidget tag_selection_widget;
+		readonly TagSelectionWidget tagSelectionWidget;
 
 		public TagSelectionDialog (TagStore tags) : base ("tag_selection_dialog.ui", "tag_selection_dialog")
 		{
-			tag_selection_widget = new TagSelectionWidget (tags);
-			tag_selection_scrolled.Add (tag_selection_widget);
-			tag_selection_widget.Show ();
+			tagSelectionWidget = new TagSelectionWidget (tags);
+			tag_selection_scrolled.Add (tagSelectionWidget);
+			tagSelectionWidget.Show ();
 		}
 
 		public new Tag[] Run ()
 		{
 			int response = base.Run ();
-			if ((ResponseType) response == ResponseType.Ok)
-				return tag_selection_widget.TagHighlight;
+			if ((ResponseType)response == ResponseType.Ok)
+				return tagSelectionWidget.TagHighlight;
 
 			return null;
 		}

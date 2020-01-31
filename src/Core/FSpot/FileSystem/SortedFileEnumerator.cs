@@ -34,7 +34,7 @@ using Hyena;
 
 namespace FSpot.FileSystem
 {
-	class SortedFileEnumerator : IEnumerable<SafeUri>
+	internal class SortedFileEnumerator : IEnumerable<SafeUri>
 	{
 		readonly List<SafeUri> files;
 

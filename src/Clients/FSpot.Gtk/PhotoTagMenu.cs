@@ -31,9 +31,10 @@
 using System;
 using System.Collections.Generic;
 
-using Gtk;
-
 using FSpot.Core;
+using FSpot.Models;
+
+using Gtk;
 
 using Hyena;
 
@@ -46,10 +47,11 @@ public class PhotoTagMenu : Menu
 	{
 	}
 
-	protected PhotoTagMenu (IntPtr raw) : base (raw) {}
+	protected PhotoTagMenu (IntPtr raw) : base (raw) { }
 
-	public void Populate (IPhoto [] photos) {
-		Dictionary<uint, Tag> dict = new Dictionary<uint, Tag> ();
+	public void Populate (IPhoto[] photos)
+	{
+		var dict = new Dictionary<Guid, Tag> ();
 		if (photos != null) {
 			foreach (IPhoto p in photos) {
 				foreach (Tag t in p.Tags) {

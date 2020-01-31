@@ -47,8 +47,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Tools.DevelopInUFRaw"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Tools.LiveWebGallery", "src\Extensions\Tools\FSpot.Tools.LiveWebGallery\FSpot.Tools.LiveWebGallery.csproj", "{B850C11B-69B7-45A4-AB1D-1BECA8C667C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Tools.MergeDb", "src\Extensions\Tools\FSpot.Tools.MergeDb\FSpot.Tools.MergeDb.csproj", "{08D1D5D9-22E6-40C8-802F-FD9BF5161481}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Tools.RawPlusJpeg", "src\Extensions\Tools\FSpot.Tools.RawPlusJpeg\FSpot.Tools.RawPlusJpeg.csproj", "{203D1EDB-3885-4CD7-BBA1-190393E4876A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Tools.RetroactiveRoll", "src\Extensions\Tools\FSpot.Tools.RetroactiveRoll\FSpot.Tools.RetroactiveRoll.csproj", "{55199016-6D69-4F52-AB82-06FC99408E78}"
@@ -83,7 +81,26 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hyena.Gui", "lib\Hyena.Gui\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hyena.UnitTest", "lib\Hyena.UnitTest\Hyena.UnitTest.csproj", "{8230AC23-BB8B-44B9-AAC3-F0794366970A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSpot.Resources", "src\Core\FSpot.Resources\FSpot.Resources.csproj", "{11FB6DE2-4317-4839-B19A-4E642029A0FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Resources", "src\Core\FSpot.Resources\FSpot.Resources.csproj", "{11FB6DE2-4317-4839-B19A-4E642029A0FE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E7C48DE6-9487-4417-B67B-C2AE101903BD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		after.F-Spot.sln.targets.in = after.F-Spot.sln.targets.in
+		azure-pipelines.yml = azure-pipelines.yml
+		ChangeLog = ChangeLog
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		HACKING = HACKING
+		LICENSE.TXT = LICENSE.TXT
+		MAINTAINERS = MAINTAINERS
+		NEWS = NEWS
+		README.md = README.md
+		TODO = TODO
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSpot.Console", "src\Clients\FSpot.Console\FSpot.Console.csproj", "{71F95ED2-844B-4727-8EE5-D80901756111}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -151,10 +168,6 @@ Global
 		{B850C11B-69B7-45A4-AB1D-1BECA8C667C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B850C11B-69B7-45A4-AB1D-1BECA8C667C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B850C11B-69B7-45A4-AB1D-1BECA8C667C0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08D1D5D9-22E6-40C8-802F-FD9BF5161481}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08D1D5D9-22E6-40C8-802F-FD9BF5161481}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08D1D5D9-22E6-40C8-802F-FD9BF5161481}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08D1D5D9-22E6-40C8-802F-FD9BF5161481}.Release|Any CPU.Build.0 = Release|Any CPU
 		{203D1EDB-3885-4CD7-BBA1-190393E4876A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{203D1EDB-3885-4CD7-BBA1-190393E4876A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{203D1EDB-3885-4CD7-BBA1-190393E4876A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -219,6 +232,10 @@ Global
 		{11FB6DE2-4317-4839-B19A-4E642029A0FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11FB6DE2-4317-4839-B19A-4E642029A0FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11FB6DE2-4317-4839-B19A-4E642029A0FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71F95ED2-844B-4727-8EE5-D80901756111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71F95ED2-844B-4727-8EE5-D80901756111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71F95ED2-844B-4727-8EE5-D80901756111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71F95ED2-844B-4727-8EE5-D80901756111}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -242,7 +259,6 @@ Global
 		{4E372D8D-A822-40F2-8C64-25F2296DAC6F} = {78EC5D8B-299B-4724-844D-6F3A8E8D1536}
 		{FBA30EB0-05EB-446D-827D-D41EBF4B81E4} = {78EC5D8B-299B-4724-844D-6F3A8E8D1536}
 		{B850C11B-69B7-45A4-AB1D-1BECA8C667C0} = {78EC5D8B-299B-4724-844D-6F3A8E8D1536}
-		{08D1D5D9-22E6-40C8-802F-FD9BF5161481} = {78EC5D8B-299B-4724-844D-6F3A8E8D1536}
 		{203D1EDB-3885-4CD7-BBA1-190393E4876A} = {78EC5D8B-299B-4724-844D-6F3A8E8D1536}
 		{55199016-6D69-4F52-AB82-06FC99408E78} = {78EC5D8B-299B-4724-844D-6F3A8E8D1536}
 		{C9302C4A-B571-4F8E-8FFA-7B4C7DF8B3E3} = {7D049DAA-F1B0-4697-9BCA-91FC0E1A2B9D}

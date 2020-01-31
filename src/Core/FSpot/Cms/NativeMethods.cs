@@ -33,7 +33,7 @@ using System.Text;
 
 namespace FSpot.Cms
 {
-	static class NativeMethods
+	internal static class NativeMethods
 	{
 		public const string lcmsLib = "liblcms-2.0.0.dll";
 

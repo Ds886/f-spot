@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(FSpotTargetFramework)</TargetFramework>
+    <TargetFramework>$(FSpotTF)</TargetFramework>
     <OutputPath>..\..\..\..\bin\Extensions</OutputPath>
     <AssemblySearchPaths>$(AssemblySearchPaths);{GAC}</AssemblySearchPaths>
     <RootNamespace>FSpot.Exporters.CDExport</RootNamespace>

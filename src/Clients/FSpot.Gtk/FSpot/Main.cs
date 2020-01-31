@@ -61,7 +61,7 @@ namespace FSpot
 	{
 		static void ShowVersion ()
 		{
-			Console.WriteLine ($"F-Spot {FSpotConfiguration.Version}");
+			Console.WriteLine ($"F-Spot {Configuration.Version}");
 			Console.WriteLine ("http://f-spot.org");
 			Console.WriteLine ("\t(c)2003-2009, Novell Inc");
 			Console.WriteLine ("\t(c)2009 Stephane Delcroix");
@@ -188,7 +188,7 @@ namespace FSpot
 			args = FixArgs (args);
 
 			ApplicationContext.ApplicationName = "F-Spot";
-			ApplicationContext.TrySetProcessName (FSpotConfiguration.Package);
+			ApplicationContext.TrySetProcessName (Configuration.Package);
 
 			Paths.ApplicationName = "f-spot";
 			SynchronizationContext.SetSynchronizationContext (new GtkSynchronizationContext ());
@@ -237,7 +237,7 @@ namespace FSpot
 				string dir = ApplicationContext.CommandLine["basedir"];
 
 				if (!string.IsNullOrEmpty (dir)) {
-					FSpotConfiguration.BaseDirectory = dir;
+					Configuration.BaseDirectory = dir;
 					Log.Information ($"BaseDirectory is now {dir}");
 				} else {
 					Log.Error ("f-spot: -basedir option takes one argument");
@@ -292,7 +292,7 @@ namespace FSpot
 			InitializeAddins ();
 
 			// Gtk initialization
-			Gtk.Application.Init (FSpotConfiguration.Package, ref args);
+			Gtk.Application.Init (Configuration.Package, ref args);
 			// Maybe we'll add this at a future date
 			//Xwt.Application.InitializeAsGuest (Xwt.ToolkitType.Gtk);
 
@@ -300,8 +300,8 @@ namespace FSpot
 			Platform.WebProxy.Init ();
 
 			if (File.Exists (Preferences.Get<string> (Preferences.GtkRc))) {
-				if (File.Exists (Path.Combine (FSpotConfiguration.BaseDirectory, "gtkrc")))
-					Gtk.Rc.AddDefaultFile (Path.Combine (FSpotConfiguration.BaseDirectory, "gtkrc"));
+				if (File.Exists (Path.Combine (Configuration.BaseDirectory, "gtkrc")))
+					Gtk.Rc.AddDefaultFile (Path.Combine (Configuration.BaseDirectory, "gtkrc"));
 
 				FSpotConfiguration.DefaultRcFiles = Gtk.Rc.DefaultFiles;
 				Gtk.Rc.AddDefaultFile (Preferences.Get<string> (Preferences.GtkRc));
@@ -359,7 +359,7 @@ namespace FSpot
 
 		static void UpdatePlugins ()
 		{
-			AddinManager.Initialize (FSpotConfiguration.BaseDirectory);
+			AddinManager.Initialize (Configuration.BaseDirectory);
 			AddinManager.Registry.Update (null);
 		}
 
@@ -367,7 +367,7 @@ namespace FSpot
 		{
 			// FIXME, test this.
 			// Nuke addin-db
-			var directory = new DirectoryInfo (new SafeUri (FSpotConfiguration.BaseDirectory));
+			var directory = new DirectoryInfo (new SafeUri (Configuration.BaseDirectory));
 			foreach (var item in directory.EnumerateDirectories ()) {
 				if (item.Name.StartsWith ("addin-db-"))
 					item.Delete (true);

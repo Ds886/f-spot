@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(FSpotTargetFramework)</TargetFramework>
+    <TargetFramework>$(FSpotTF)</TargetFramework>
     <OutputPath>..\..\..\..\bin\Extensions</OutputPath>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <AssemblySearchPaths>$(AssemblySearchPaths);{GAC}</AssemblySearchPaths>
@@ -30,6 +30,7 @@
     <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="System.Web" />
   </ItemGroup>
 
   <ItemGroup>

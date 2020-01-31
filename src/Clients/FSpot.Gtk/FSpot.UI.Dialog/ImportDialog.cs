@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using FSpot.Database;
 using FSpot.Import;
 using FSpot.Settings;
 using FSpot.Utils;
@@ -101,8 +102,8 @@ namespace FSpot.UI.Dialog
 
 			import_button.Sensitive = false;
 
-			tag_entry = new TagEntry (App.Instance.Database.Tags, false);
-			tag_entry.UpdateFromTagNames (new string []{});
+			tag_entry = new TagEntry (new TagStore (), false);
+			tag_entry.UpdateFromTagNames (Array.Empty<string> ());
 			tagentry_box.Add (tag_entry);
 			tag_entry.Show ();
 			attachtags_label.MnemonicWidget = tag_entry;
@@ -136,7 +137,7 @@ namespace FSpot.UI.Dialog
 		void ScanSources ()
 		{
 			// Populates the source combo box
-			Sources = new TreeStore (typeof(ImportSource), typeof(string), typeof(string), typeof(bool));
+			Sources = new TreeStore (typeof (ImportSource), typeof (string), typeof (string), typeof (bool));
 			sources_combo.Model = Sources;
 			sources_combo.RowSeparatorFunc = (m, i) => (m.GetValue (i, 1) as string) == string.Empty;
 			var render = new CellRendererPixbuf ();
@@ -238,7 +239,7 @@ namespace FSpot.UI.Dialog
 			file_chooser.LocalOnly = false;
 
 			int response = file_chooser.Run ();
-			if ((ResponseType) response == ResponseType.Ok) {
+			if ((ResponseType)response == ResponseType.Ok) {
 				var uri = new SafeUri (file_chooser.Uri, true);
 				SwitchToFolderSource (uri);
 			}
@@ -273,7 +274,7 @@ namespace FSpot.UI.Dialog
 			sources_combo.GetActiveIter (out iter);
 			var source = Sources.GetValue (iter, 0) as ImportSource;
 			if (source == null) {
-				var label = (string) Sources.GetValue (iter, 1);
+				var label = (string)Sources.GetValue (iter, 1);
 				if (label == select_folder_label) {
 					ShowFolderSelector ();
 					return;
@@ -289,33 +290,33 @@ namespace FSpot.UI.Dialog
 			Log.DebugFormat ("Received controller event: {0}", evnt);
 
 			switch (evnt) {
-				case ImportEvent.SourceChanged:
-					HideScanSpinner ();
-					ResetPreview ();
-					import_button.Sensitive = true;
-					break;
+			case ImportEvent.SourceChanged:
+				HideScanSpinner ();
+				ResetPreview ();
+				import_button.Sensitive = true;
+				break;
 
-				case ImportEvent.PhotoScanStarted:
-					ShowScanSpinner ();
-					break;
+			case ImportEvent.PhotoScanStarted:
+				ShowScanSpinner ();
+				break;
 
-				case ImportEvent.PhotoScanFinished:
-					HideScanSpinner ();
-					break;
+			case ImportEvent.PhotoScanFinished:
+				HideScanSpinner ();
+				break;
 
-				case ImportEvent.ImportStarted:
-					ShowImportProgress ();
-					break;
+			case ImportEvent.ImportStarted:
+				ShowImportProgress ();
+				break;
 
-				case ImportEvent.ImportFinished:
-					ShowFailuresIfNeeded (Controller.FailedImports);
-					Controller = null;
-					Destroy ();
-					break;
+			case ImportEvent.ImportFinished:
+				ShowFailuresIfNeeded (Controller.FailedImports);
+				Controller = null;
+				Destroy ();
+				break;
 
-				case ImportEvent.ImportError:
-					//FIXME
-					break;
+			case ImportEvent.ImportError:
+				//FIXME
+				break;
 			}
 		}
 
@@ -331,7 +332,7 @@ namespace FSpot.UI.Dialog
 		{
 			var importing_label = Catalog.GetString ("Importing Photos: {0} of {1}...");
 			progress_bar.Text = string.Format (importing_label, current, total);
-			progress_bar.Fraction = (double) current / Math.Max (total, 1);
+			progress_bar.Fraction = (double)current / Math.Max (total, 1);
 		}
 
 		void StartImport ()
@@ -371,8 +372,7 @@ namespace FSpot.UI.Dialog
 			progress_bar.Hide ();
 		}
 
-		public bool OptionsSensitive
-		{
+		public bool OptionsSensitive {
 			set {
 				sources_combo.Sensitive = value;
 				copy_check.Sensitive = value;

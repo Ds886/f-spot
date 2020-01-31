@@ -141,9 +141,9 @@ namespace FSpot.Exporters.Folder
 			HandleSizeActive (null, null);
 			name_entry.Text = gallery_name;
 
-			string uri_path = Path.Combine (FSpotConfiguration.HomeDirectory, "Desktop");
+			string uri_path = Path.Combine (Configuration.HomeDirectory, "Desktop");
 			if (!Directory.Exists (uri_path))
-				uri_path = FSpotConfiguration.HomeDirectory;
+				uri_path = Configuration.HomeDirectory;
 
 			uri_chooser = new Gtk.FileChooserButton (Catalog.GetString ("Select Export Folder"), Gtk.FileChooserAction.SelectFolder) {
 				LocalOnly = false

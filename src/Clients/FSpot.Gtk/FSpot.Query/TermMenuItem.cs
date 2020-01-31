@@ -36,14 +36,14 @@ using System.Collections.Generic;
 
 using Mono.Unix;
 
-using FSpot.Core;
+using FSpot.Models;
 using FSpot.Utils;
 
 namespace FSpot.Query
 {
 	public static class TermMenuItem
 	{
-		public static void Create (Tag [] tags, Gtk.Menu menu)
+		public static void Create (Tag[] tags, Gtk.Menu menu)
 		{
 			var findWithString = Catalog.GetPluralString ("Find _With", "Find _With", tags.Length);
 			var item = new Gtk.MenuItem (string.Format (findWithString, tags.Length));
@@ -58,7 +58,7 @@ namespace FSpot.Query
 			item.Show ();
 		}
 
-		public static Gtk.Menu GetSubmenu (Tag [] tags)
+		public static Gtk.Menu GetSubmenu (Tag[] tags)
 		{
 			Tag single_tag = null;
 			if (tags != null && tags.Length == 1)
@@ -70,7 +70,7 @@ namespace FSpot.Query
 
 			var m = new Gtk.Menu ();
 
-			Gtk.MenuItem all_item = GtkUtil.MakeMenuItem (m, Catalog.GetString ("All"), new EventHandler (App.Instance.Organizer.HandleRequireTag));
+			Gtk.MenuItem all_item = GtkUtil.MakeMenuItem (m, Catalog.GetString ("All"), App.Instance.Organizer.HandleRequireTag);
 			GtkUtil.MakeMenuSeparator (m);
 
 			int sensitive_items = 0;
@@ -81,7 +81,7 @@ namespace FSpot.Query
 
 				string name = "_" + string.Join (", ", term_parts.ToArray ());
 
-				Gtk.MenuItem item = GtkUtil.MakeMenuItem (m, name, new EventHandler (App.Instance.Organizer.HandleAddTagToTerm));
+				Gtk.MenuItem item = GtkUtil.MakeMenuItem (m, name, App.Instance.Organizer.HandleAddTagToTerm);
 				item.Sensitive = !contains_tag;
 
 				if (!contains_tag)
@@ -94,12 +94,11 @@ namespace FSpot.Query
 			return m;
 		}
 
-		static bool AppendTerm (List<string> parts, Term term, Tag singleTag)
+		static bool AppendTerm (ICollection<string> parts, Term term, Tag singleTag)
 		{
 			bool tag_matches = false;
 			if (term != null) {
-				var literal = term as Literal;
-				if (literal != null) {
+				if (term is Literal literal) {
 					if (literal.Tag == singleTag)
 						tag_matches = true;
 

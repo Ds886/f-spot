@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
-    <FSpotTargetFramework>net472</FSpotTargetFramework>
+    <FSpotTF>net472</FSpotTF>
+    <FSpotStandardTF>netstandard2.0</FSpotStandardTF>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>

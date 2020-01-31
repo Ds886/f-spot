@@ -32,13 +32,18 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+
 using FSpot.Core;
 using FSpot.Database;
 using FSpot.FileSystem;
 using FSpot.Imaging;
+using FSpot.Models;
 using FSpot.Settings;
+
 using Gtk;
+
 using Hyena;
+
 using Mono.Unix;
 
 namespace FSpot.Import
@@ -59,7 +64,7 @@ namespace FSpot.Import
 			LoadPreferences ();
 		}
 
-#region Import Preferences
+		#region Import Preferences
 
 		readonly bool persistPreferences;
 		bool copyFiles = true;
@@ -122,16 +127,16 @@ namespace FSpot.Import
 			if (!persistPreferences)
 				return;
 
-			Preferences.Set(Preferences.ImportCopyFiles, copyFiles);
-			Preferences.Set(Preferences.ImportIncludeSubfolders, recurseSubdirectories);
-			Preferences.Set(Preferences.ImportCheckDuplicates, duplicateDetect);
-			Preferences.Set(Preferences.ImportRemoveOriginals, removeOriginals);
+			Preferences.Set (Preferences.ImportCopyFiles, copyFiles);
+			Preferences.Set (Preferences.ImportIncludeSubfolders, recurseSubdirectories);
+			Preferences.Set (Preferences.ImportCheckDuplicates, duplicateDetect);
+			Preferences.Set (Preferences.ImportRemoveOriginals, removeOriginals);
 			Preferences.Set (Preferences.ImportMergeRawAndJpeg, mergeRawAndJpeg);
 		}
 
-#endregion
+		#endregion
 
-#region Source Scanning
+		#region Source Scanning
 
 		List<ImportSource> sources;
 		public List<ImportSource> Sources => sources ?? (sources = ScanSources ());
@@ -145,7 +150,7 @@ namespace FSpot.Import
 
 				var themedIcon = mount.Icon as GLib.ThemedIcon;
 				if (themedIcon != null && themedIcon.Names.Length > 0) {
-					sources.Add (new ImportSource (root, mount.Name, themedIcon.Names [0]));
+					sources.Add (new ImportSource (root, mount.Name, themedIcon.Names[0]));
 				} else {
 					sources.Add (new ImportSource (root, mount.Name, null));
 				}
@@ -153,9 +158,9 @@ namespace FSpot.Import
 			return sources;
 		}
 
-#endregion
+		#endregion
 
-#region Status Reporting
+		#region Status Reporting
 
 		public delegate void ImportProgressHandler (int current, int total);
 		public event ImportProgressHandler ProgressUpdated;
@@ -178,9 +183,9 @@ namespace FSpot.Import
 		public int PhotosImported { get; private set; }
 		public List<SafeUri> FailedImports { get; }
 
-#endregion
+		#endregion
 
-#region Source Switching
+		#region Source Switching
 
 		ImportSource activeSource;
 		public ImportSource ActiveSource {
@@ -199,9 +204,9 @@ namespace FSpot.Import
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Photo Scanning
+		#region Photo Scanning
 
 		Thread scanThread;
 		CancellationTokenSource scanTokenSource;
@@ -255,9 +260,9 @@ namespace FSpot.Import
 			FireEvent (ImportEvent.PhotoScanFinished);
 		}
 
-#endregion
+		#endregion
 
-#region Importing
+		#region Importing
 
 		Thread importThread;
 		CancellationTokenSource importTokenSource;
@@ -302,17 +307,16 @@ namespace FSpot.Import
 			FireEvent (ImportEvent.ImportFinished);
 		}
 
-#endregion
+		#endregion
 
-#region Tagging
+		#region Tagging
 
 		readonly List<Tag> attachTags = new List<Tag> ();
-		readonly TagStore tagStore = App.Instance.Database.Tags;
+		readonly TagStore tagStore = new TagStore ();
 
 		// Set the tags that will be added on import.
 		public void AttachTags (IEnumerable<string> tags)
 		{
-			App.Instance.Database.BeginTransaction ();
 			var importCategory = GetImportedTagsCategory ();
 			foreach (var tagname in tags) {
 				var tag = tagStore.GetTagByName (tagname);
@@ -322,7 +326,6 @@ namespace FSpot.Import
 				}
 				attachTags.Add (tag);
 			}
-			App.Instance.Database.CommitTransaction ();
 		}
 
 		Category GetImportedTagsCategory ()
@@ -335,6 +338,6 @@ namespace FSpot.Import
 			return defaultCategory;
 		}
 
-#endregion
+		#endregion
 	}
 }

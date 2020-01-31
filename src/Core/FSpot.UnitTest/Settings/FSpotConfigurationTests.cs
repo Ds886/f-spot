@@ -42,13 +42,13 @@ namespace FSpot.UnitTest.Settings
 		{
 			// This shouldn't change, but, this test will catch someone changing it
 			//  For now at least
-			FSpotConfiguration.Package.ShouldBe ("f-spot");
+			Configuration.Package.ShouldBe ("f-spot");
 		}
 
 		[Test]
 		public void CheckCurrentVersion ()
 		{
-			FSpotConfiguration.Version.ShouldBe ("0.9.0");
+			Configuration.Version.ShouldBe ("0.9.0");
 		}
 	}
 }
