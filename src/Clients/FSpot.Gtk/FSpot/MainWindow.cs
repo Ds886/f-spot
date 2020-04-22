@@ -185,13 +185,13 @@ namespace FSpot
 
 		const int PHOTO_IDX_NONE = -1;
 
-		public Db Database { get; set; }
+		public Db Database { get; }
 
 		public ModeType ViewMode { get; set; }
 
-		public MainSelection Selection { get; set; }
+		public MainSelection Selection { get;}
 
-		public InfoBox InfoBox { get; set; }
+		public InfoBox InfoBox { get;}
 
 		static TargetList iconSourceTargetList = new TargetList ();
 		static TargetList iconDestTargetList = new TargetList ();
@@ -301,7 +301,7 @@ namespace FSpot
 			};
 			toolbar.Insert (white_space, -1);
 
-			ToolItem label_item = new ToolItem ();
+			var label_item = new ToolItem ();
 			count_label = new Label (string.Empty);
 			label_item.Child = count_label;
 			toolbar.Insert (label_item, -1);

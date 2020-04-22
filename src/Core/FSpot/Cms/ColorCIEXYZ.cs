@@ -47,16 +47,14 @@ namespace FSpot.Cms
 
 		public ColorCIExyY ToxyY ()
 		{
-			ColorCIExyY dest;
-			NativeMethods.CmsXYZ2xyY (out dest, ref this);
+			NativeMethods.CmsXYZ2xyY (out var dest, ref this);
 			
 			return dest;
 		}
 
 		public ColorCIELab ToLab (ColorCIEXYZ wp)
 		{
-			ColorCIELab lab;
-			NativeMethods.CmsXYZ2Lab (ref wp, out lab, ref this);
+			NativeMethods.CmsXYZ2Lab (ref wp, out var lab, ref this);
 
 			return lab;
 		}
@@ -64,7 +62,7 @@ namespace FSpot.Cms
 		public static ColorCIEXYZ FromPtr(IntPtr ptr)
 		{
 			if (ptr == IntPtr.Zero)
-				throw new ArgumentNullException ("ptr", "lcms Color argument was null");
+				throw new ArgumentNullException (nameof (ptr), "lcms Color argument was null");
 			return (ColorCIEXYZ) Marshal.PtrToStructure (ptr, typeof (ColorCIEXYZ));
 		}
 
@@ -82,7 +80,7 @@ namespace FSpot.Cms
 
 		public override string ToString ()
 		{
-			return string.Format ("(x={0}, y={1}, z={2})", x, y, z);
+			return $"(x={x}, y={y}, z={z})";
 		}
 	}
 

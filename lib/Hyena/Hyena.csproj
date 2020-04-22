@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(FSpotStandardTF)</TargetFramework>
+    <TargetFramework>$(FSpotTF)</TargetFramework>
     <AssemblySearchPaths>$(AssemblySearchPaths);{GAC}</AssemblySearchPaths>
     <OutputPath>..\..\bin</OutputPath>
   </PropertyGroup>

@@ -37,8 +37,77 @@ namespace FSpot
 		const int IdColumn = 0;
 		const int NameColumn = 1;
 
-		// Selection management.
+		static TargetList tagSourceTargetList = new TargetList ();
+		static TargetList tagDestTargetList = new TargetList ();
 
+		static TagSelectionWidget ()
+		{
+			tagSourceTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
+
+			tagDestTargetList.AddTargetEntry (DragDropTargets.PhotoListEntry);
+			tagDestTargetList.AddUriTargets ((uint)DragDropTargets.TargetType.UriList);
+			tagDestTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
+		}
+
+		CellRendererPixbuf pix_render;
+		TreeViewColumn complete_column;
+		CellRendererText text_render;
+
+		protected TagSelectionWidget (IntPtr raw) : base (raw) { }
+
+		public TagSelectionWidget (TagStore tag_store) : base (new TreeStore (typeof (uint), typeof (string)))
+		{
+
+			HeadersVisible = false;
+
+			complete_column = new TreeViewColumn ();
+
+			pix_render = new CellRendererPixbuf ();
+			complete_column.PackStart (pix_render, false);
+			complete_column.SetCellDataFunc (pix_render, new TreeCellDataFunc (IconDataFunc));
+			//complete_column.AddAttribute (pix_render, "pixbuf", OpenIconColumn);
+
+			//icon_column = AppendColumn ("icon",
+			//, new TreeCellDataFunc (IconDataFunc));
+			//icon_column = AppendColumn ("icon", new CellRendererPixbuf (), new TreeCellDataFunc (IconDataFunc));
+
+			text_render = new CellRendererText ();
+			complete_column.PackStart (text_render, true);
+			complete_column.SetCellDataFunc (text_render, new TreeCellDataFunc (NameDataFunc));
+
+			AppendColumn (complete_column);
+
+			tagStore = tag_store;
+
+			Update ();
+
+			ExpandDefaults ();
+
+			tag_store.ItemsAdded += HandleTagsAdded;
+			tag_store.ItemsRemoved += HandleTagsRemoved;
+			tag_store.ItemsChanged += HandleTagsChanged;
+
+			// TODO make the search find tags that are not currently expanded
+			EnableSearch = true;
+			SearchColumn = NameColumn;
+
+			// Transparent white
+			empty_pixbuf.Fill (0xffffff00);
+
+
+			/* set up drag and drop */
+			DragDataGet += HandleDragDataGet;
+			DragDrop += HandleDragDrop;
+			DragBegin += HandleDragBegin;
+
+			Gtk.Drag.SourceSet (this, Gdk.ModifierType.Button1Mask | Gdk.ModifierType.Button3Mask,
+					   (TargetEntry[])tagSourceTargetList, DragAction.Copy | DragAction.Move);
+
+			DragDataReceived += HandleDragDataReceived;
+			DragMotion += HandleDragMotion;
+
+			Gtk.Drag.DestSet (this, DestDefaults.All, (TargetEntry[])tagDestTargetList, DragAction.Copy | DragAction.Move);
+		}
 		public Tag TagAtPosition (double x, double y)
 		{
 			return TagAtPosition ((int)x, (int)y);
@@ -461,78 +530,6 @@ namespace FSpot
 			text_render.Edited -= HandleTagNameEdited;
 
 			args.RetVal = true;
-		}
-
-		static TargetList tagSourceTargetList = new TargetList ();
-		static TargetList tagDestTargetList = new TargetList ();
-
-		static TagSelectionWidget ()
-		{
-			tagSourceTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
-
-			tagDestTargetList.AddTargetEntry (DragDropTargets.PhotoListEntry);
-			tagDestTargetList.AddUriTargets ((uint)DragDropTargets.TargetType.UriList);
-			tagDestTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
-		}
-
-		CellRendererPixbuf pix_render;
-		TreeViewColumn complete_column;
-		CellRendererText text_render;
-
-		protected TagSelectionWidget (IntPtr raw) : base (raw) { }
-
-		public TagSelectionWidget (TagStore tag_store) : base (new TreeStore (typeof (uint), typeof (string)))
-		{
-
-			HeadersVisible = false;
-
-			complete_column = new TreeViewColumn ();
-
-			pix_render = new CellRendererPixbuf ();
-			complete_column.PackStart (pix_render, false);
-			complete_column.SetCellDataFunc (pix_render, new TreeCellDataFunc (IconDataFunc));
-			//complete_column.AddAttribute (pix_render, "pixbuf", OpenIconColumn);
-
-			//icon_column = AppendColumn ("icon",
-			//, new TreeCellDataFunc (IconDataFunc));
-			//icon_column = AppendColumn ("icon", new CellRendererPixbuf (), new TreeCellDataFunc (IconDataFunc));
-
-			text_render = new CellRendererText ();
-			complete_column.PackStart (text_render, true);
-			complete_column.SetCellDataFunc (text_render, new TreeCellDataFunc (NameDataFunc));
-
-			AppendColumn (complete_column);
-
-			tagStore = tag_store;
-
-			Update ();
-
-			ExpandDefaults ();
-
-			tag_store.ItemsAdded += HandleTagsAdded;
-			tag_store.ItemsRemoved += HandleTagsRemoved;
-			tag_store.ItemsChanged += HandleTagsChanged;
-
-			// TODO make the search find tags that are not currently expanded
-			EnableSearch = true;
-			SearchColumn = NameColumn;
-
-			// Transparent white
-			empty_pixbuf.Fill (0xffffff00);
-
-
-			/* set up drag and drop */
-			DragDataGet += HandleDragDataGet;
-			DragDrop += HandleDragDrop;
-			DragBegin += HandleDragBegin;
-
-			Gtk.Drag.SourceSet (this, Gdk.ModifierType.Button1Mask | Gdk.ModifierType.Button3Mask,
-					   (TargetEntry[])tagSourceTargetList, DragAction.Copy | DragAction.Move);
-
-			DragDataReceived += HandleDragDataReceived;
-			DragMotion += HandleDragMotion;
-
-			Gtk.Drag.DestSet (this, DestDefaults.All, (TargetEntry[])tagDestTargetList, DragAction.Copy | DragAction.Move);
 		}
 
 		void HandleDragBegin (object sender, DragBeginArgs args)
