@@ -3,7 +3,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+
 using FSpot.Core;
 using FSpot.Settings;
 
@@ -21,19 +23,38 @@ namespace FSpot.Models
 		public long SortPriority { get; set; }
 		public string Icon { get; set; }
 
+		[NotMapped]
+		List<Tag> children = new List<Tag> ();
+
+		[NotMapped]
+		bool childrenNeedSort;
 
 		[NotMapped]
 		public int Popularity { get; set; }
 
-		Category category;
+		Tag category;
 		[NotMapped]
-		public Category Category {
+		public Tag Category {
 			get { return category; }
 			set {
 				Category?.RemoveChild (this);
 
 				category = value;
 				category?.AddChild (this);
+			}
+		}
+
+		[NotMapped]
+		public List<Tag> Children {
+			get {
+				if (childrenNeedSort)
+					children.Sort ();
+
+				return children;
+			}
+			set {
+				children = new List<Tag> (value);
+				childrenNeedSort = true;
 			}
 		}
 
@@ -54,12 +75,20 @@ namespace FSpot.Models
 			IconWasCleared = false;
 		}
 
-		public Tag (Category category)
+		public Tag (Tag category)
 		{
 			Category = category;
 			Popularity = 0;
 			IconWasCleared = false;
 			TagIcon = new TagIcon (this);
+		}
+
+		public Tag (Tag category, Guid id, string name)
+		{
+			Category = category;
+			Id = id;
+			Name = name;
+			Children = new List<Tag> ();
 		}
 
 		[NotMapped]
@@ -68,7 +97,7 @@ namespace FSpot.Models
 		public int CompareTo (Tag otherTag)
 		{
 			if (otherTag == null)
-				throw new ArgumentException (nameof (otherTag));
+				throw new ArgumentNullException (nameof (otherTag));
 
 			if (Category == otherTag.Category) {
 				if (SortPriority == otherTag.SortPriority)
@@ -85,12 +114,41 @@ namespace FSpot.Models
 			if (tag == null)
 				throw new ArgumentNullException (nameof (tag));
 
-			for (Category parent = tag.Category; parent != null; parent = parent.Category) {
+			for (Tag parent = tag.Category; parent != null; parent = parent.Category) {
 				if (parent == this)
 					return true;
 			}
 
 			return false;
+		}
+
+		// Appends all of this categories descendents to the list
+		public void AddDescendentsTo (IList<Tag> list)
+		{
+			if (list == null)
+				throw new ArgumentNullException (nameof (list));
+
+			foreach (Tag tag in children) {
+				if (!list.Contains (tag))
+					list.Add (tag);
+
+				if (!tag.IsCategory)
+					continue;
+
+				tag.AddDescendentsTo (list);
+			}
+		}
+
+		public void AddChild (Tag child)
+		{
+			children.Add (child);
+			childrenNeedSort = true;
+		}
+
+		public void RemoveChild (Tag child)
+		{
+			children.Remove (child);
+			childrenNeedSort = true;
 		}
 	}
 }

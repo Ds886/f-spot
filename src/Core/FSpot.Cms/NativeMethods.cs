@@ -126,11 +126,11 @@ namespace FSpot.Cms
 
 		[DllImport (lcmsLib, EntryPoint = "cmsGetProfileInfo", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int CmsGetProfileInfo (HandleRef hprofile,
-													  CmsProfileInfo info,
-													  string languageCode,
-													  string countryCode,
-													  [Out, MarshalAsAttribute (UnmanagedType.LPWStr)] StringBuilder buffer,
-													  int bufferSize);
+													CmsProfileInfo info,
+													string languageCode,
+													string countryCode,
+													[Out, MarshalAs (UnmanagedType.LPWStr)] StringBuilder buffer,
+													int bufferSize);
 
 
 		public enum CmsTagSignature

@@ -247,10 +247,10 @@ namespace FSpot
 			toolbar = new Gtk.Toolbar ();
 			toolbar_vbox.PackStart (toolbar);
 
-			ToolButton import_button = GtkUtil.ToolButtonFromTheme ("gtk-add", Catalog.GetString ("Import Photos…"), true);
-			import_button.Clicked += (o, args) => StartImport (null);
-			import_button.TooltipText = Catalog.GetString ("Import new photos");
-			toolbar.Insert (import_button, -1);
+			ToolButton importButton = GtkUtil.ToolButtonFromTheme ("gtk-add", Catalog.GetString ("Import Photos…"), true);
+			importButton.Clicked += (o, args) => StartImport (null);
+			importButton.TooltipText = Catalog.GetString ("Import new photos");
+			toolbar.Insert (importButton, -1);
 
 			toolbar.Insert (new SeparatorToolItem (), -1);
 
@@ -320,8 +320,7 @@ namespace FSpot
 			ViewModeChanged += Sidebar.HandleMainWindowViewModeChanged;
 			sidebar_vbox.Add (Sidebar);
 
-			tag_selection_scrolled = new Gtk.ScrolledWindow ();
-			tag_selection_scrolled.ShadowType = ShadowType.In;
+			tag_selection_scrolled = new Gtk.ScrolledWindow { ShadowType = ShadowType.In };
 
 			tag_selection_widget = new TagSelectionWidget (Database.Tags);
 			tag_selection_scrolled.Add (tag_selection_widget);
@@ -370,7 +369,6 @@ namespace FSpot
 
 			group_selector = new GroupSelector ();
 			group_selector.Adaptor = new TimeAdaptor (query, Preferences.Get<bool> (Preferences.GroupAdaptorOrderAsc));
-
 			group_selector.ShowAll ();
 
 			if (zoom_scale != null)
@@ -866,7 +864,7 @@ namespace FSpot
 		// Tag Selection Drag Handlers
 		//
 
-		public void AddTagExtended (int[] nums, Tag[] tags)
+		public void AddTagExtended (int[] nums, IEnumerable<Tag> tags)
 		{
 			foreach (int num in nums)
 				TagService.Instance.Add (query[num] as Photo, tags);
@@ -897,7 +895,7 @@ namespace FSpot
 			query_widget.SetFolders (uriList);
 		}
 
-		public void RemoveTags (int[] nums, Tag[] tags)
+		public void RemoveTags (int[] nums, IEnumerable<Tag> tags)
 		{
 			foreach (int num in nums)
 				TagService.Instance.Remove (query[num] as Photo, tags);
@@ -1595,13 +1593,13 @@ namespace FSpot
 
 			if (new_tag != null) {
 				tag_selection_widget.ScrollTo (new_tag);
-				tag_selection_widget.TagHighlight = new Tag[] { new_tag };
+				tag_selection_widget.TagHighlight = new[] { new_tag };
 			}
 		}
 
-		public Tag CreateTag (object sender, EventArgs args)
+		Tag CreateTag (object sender, EventArgs args)
 		{
-			var dialog = new CreateTagDialog (Database.Tags);
+			using var dialog = new CreateTagDialog (Database.Tags);
 			return dialog.Execute (CreateTagDialog.TagType.Category, tag_selection_widget.TagHighlight);
 		}
 
@@ -1610,7 +1608,7 @@ namespace FSpot
 			AttachTags (tag_selection_widget.TagHighlight, SelectedIds ());
 		}
 
-		void AttachTags (Tag[] tags, int[] ids)
+		void AttachTags (IEnumerable<Tag> tags, int[] ids)
 		{
 			AddTagExtended (ids, tags);
 			query_widget.PhotoTagsChanged (tags);
@@ -1618,7 +1616,7 @@ namespace FSpot
 
 		public void HandleRemoveTagCommand (object obj, EventArgs args)
 		{
-			Tag[] tags = this.tag_selection_widget.TagHighlight;
+			var tags = tag_selection_widget.TagHighlight;
 
 			RemoveTags (SelectedIds (), tags);
 			query_widget.PhotoTagsChanged (tags);
@@ -1626,11 +1624,11 @@ namespace FSpot
 
 		public void HandleEditSelectedTag (object sender, EventArgs ea)
 		{
-			Tag[] tags = this.tag_selection_widget.TagHighlight;
-			if (tags.Length != 1)
+			var tags = tag_selection_widget.TagHighlight;
+			if (tags.Count () != 1)
 				return;
 
-			HandleEditSelectedTagWithTag (tags[0]);
+			HandleEditSelectedTagWithTag (tags.First ());
 		}
 
 		public void HandleEditSelectedTagWithTag (Tag tag)
@@ -1638,7 +1636,7 @@ namespace FSpot
 			if (tag == null)
 				return;
 
-			EditTagDialog dialog = new EditTagDialog (Database, tag, main_window);
+			using var dialog = new EditTagDialog (Database, tag, main_window);
 			if ((ResponseType)dialog.Run () == ResponseType.Ok) {
 				bool name_changed = false;
 				try {
@@ -1658,32 +1656,32 @@ namespace FSpot
 
 		public void HandleMergeTagsCommand (object obj, EventArgs args)
 		{
-			Tag[] tags = tag_selection_widget.TagHighlight;
-			if (tags.Length < 2)
+			var tags = tag_selection_widget.TagHighlight;
+			if (tags.Count () < 2)
 				return;
 
 			// Translators, The singular case will never happen here.
-			string header = Catalog.GetPluralString ("Merge the selected tag", "Merge the {0} selected tags?", tags.Length);
-			header = string.Format (header, tags.Length);
+			string header = Catalog.GetPluralString ("Merge the selected tag", "Merge the {0} selected tags?", tags.Count ());
+			header = string.Format (header, tags.Count ());
 
 			// If a tag with children tags is selected for merging, we
 			// should also merge its children..
-			var all_tags = new List<Tag> (tags.Length);
+			var all_tags = new List<Tag> (tags.Count ());
 			foreach (Tag tag in tags) {
 				if (!all_tags.Contains (tag))
 					all_tags.Add (tag);
 				else
 					continue;
 
-				(tag as Category)?.AddDescendentsTo (all_tags);
+				(tag)?.AddDescendentsTo (all_tags);
 			}
 
 			// debug..
 			tags = all_tags.ToArray ();
-			Array.Sort (tags, new TagRemoveComparer ());
+			tags.ToList ().Sort(new TagRemoveComparer ());
 
 			foreach (Tag tag in tags) {
-				Log.Debug ("tag: {0}", tag.Name);
+				Log.Debug ($"tag: {tag.Name}");
 			}
 
 			string msg = Catalog.GetString ("This operation will merge the selected tags and any sub-tags into a single tag.");
@@ -1695,10 +1693,11 @@ namespace FSpot
 
 			// The surviving tag is the last tag, as it is definitely not a child of any other the
 			// other tags.  removetags will contain the tags to be merged.
-			Tag survivor = tags[tags.Length - 1];
+			Tag survivor = tags.Last ();
 
-			var removetags = new Tag[tags.Length - 1];
-			Array.Copy (tags, 0, removetags, 0, tags.Length - 1);
+			var removetags = new Tag[tags.Count () - 1];
+			//Array.Copy (sourceArray, srcIndex, dstArray, dstIndex, length);
+			Array.Copy (tags.ToArray (), 0, removetags, 0, tags.Count () - 1);
 
 			// Add the surviving tag to all the photos with the other tags
 			var photos = ObsoletePhotoQueries.Query (removetags);
@@ -2120,9 +2119,9 @@ namespace FSpot
 
 		public void HandleDeleteSelectedTagCommand (object sender, EventArgs args)
 		{
-			Tag[] tags = this.tag_selection_widget.TagHighlight;
+			var tags = tag_selection_widget.TagHighlight;
 
-			Array.Sort (tags, new TagRemoveComparer ());
+			tags.ToList ().Sort(new TagRemoveComparer ());
 
 			//How many pictures are associated to these tags?
 			var photoStore = new PhotoStore ();
@@ -2131,22 +2130,22 @@ namespace FSpot
 			int associated_photos = count_query.Count;
 
 			string header;
-			if (tags.Length == 1)
-				header = string.Format (Catalog.GetString ("Delete tag \"{0}\"?"), tags[0].Name.Replace ("_", "__"));
+			if (tags.Count () == 1)
+				header = string.Format (Catalog.GetString ("Delete tag \"{0}\"?"), tags.First ().Name.Replace ("_", "__"));
 			else
-				header = string.Format (Catalog.GetString ("Delete the {0} selected tags?"), tags.Length);
+				header = string.Format (Catalog.GetString ("Delete the {0} selected tags?"), tags.Count ());
 
-			header = string.Format (header, tags.Length);
+			header = string.Format (header, tags.Count ());
 			string msg = string.Empty;
 			if (associated_photos > 0) {
 				string photodesc = Catalog.GetPluralString ("photo", "photos", associated_photos);
 				msg = string.Format (
 					Catalog.GetPluralString ("If you delete this tag, the association with {0} {1} will be lost.",
 						"If you delete these tags, the association with {0} {1} will be lost.",
-						tags.Length),
+						tags.Count ()),
 					associated_photos, photodesc);
 			}
-			string ok_caption = Catalog.GetPluralString ("_Delete tag", "_Delete tags", tags.Length);
+			string ok_caption = Catalog.GetPluralString ("_Delete tag", "_Delete tags", tags.Count ());
 
 			if (ResponseType.Ok == HigMessageDialog.RunHigConfirmation (main_window,
 					DialogFlags.DestroyWithParent,
@@ -2816,20 +2815,20 @@ namespace FSpot
 			if (selected_photos == null || new_tags == null || new_tags.Length == 0)
 				return;
 
-			Category default_category = null;
-			Tag[] selection = tag_selection_widget.TagHighlight;
-			if (selection.Length > 0) {
-				if (selection[0] is Category)
-					default_category = (Category)selection[0];
+			Tag default_category = null;
+			var selection = tag_selection_widget.TagHighlight;
+			if (selection.Any()) {
+				if (selection.First ().IsCategory)
+					default_category = selection.First ();
 				else
-					default_category = selection[0].Category;
+					default_category = selection.First ().Category;
 			}
-			Tag[] tags = new Tag[new_tags.Length];
+			var tags = new Tag[new_tags.Length];
 			int i = 0;
 			foreach (string tagname in new_tags) {
 				Tag t = Database.Tags.GetTagByName (tagname);
 				if (t == null) {
-					t = Database.Tags.CreateCategory (default_category, tagname, true);
+					t = Database.Tags.CreateTag (default_category, tagname, true, true);
 					Database.Tags.Commit (t);
 				}
 				tags[i++] = t;

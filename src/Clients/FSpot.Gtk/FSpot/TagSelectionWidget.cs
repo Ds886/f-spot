@@ -7,8 +7,7 @@
 
 using System;
 using System.Collections.Generic;
-
-using FSpot.Cms;
+using System.Linq;
 using FSpot.Database;
 using FSpot.Models;
 using FSpot.Services;
@@ -28,34 +27,34 @@ namespace FSpot
 {
 	public class TagSelectionWidget : SaneTreeView
 	{
-		TagStore tagStore;
+		readonly TagStore tagStore;
 
 		// FIXME this is a hack.
-		static Pixbuf empty_pixbuf = new Pixbuf (Colorspace.Rgb, true, 8, 1, 1);
+		static readonly Pixbuf EmptyPixbuf = new Pixbuf (Colorspace.Rgb, true, 8, 1, 1);
 
 		// If these are changed, the base () call in the constructor must be updated.
 		const int IdColumn = 0;
 		const int NameColumn = 1;
 
-		static TargetList tagSourceTargetList = new TargetList ();
-		static TargetList tagDestTargetList = new TargetList ();
+		static readonly TargetList TagSourceTargetList = new TargetList ();
+		static readonly TargetList TagDestTargetList = new TargetList ();
 
 		static TagSelectionWidget ()
 		{
-			tagSourceTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
+			TagSourceTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
 
-			tagDestTargetList.AddTargetEntry (DragDropTargets.PhotoListEntry);
-			tagDestTargetList.AddUriTargets ((uint)DragDropTargets.TargetType.UriList);
-			tagDestTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
+			TagDestTargetList.AddTargetEntry (DragDropTargets.PhotoListEntry);
+			TagDestTargetList.AddUriTargets ((uint)DragDropTargets.TargetType.UriList);
+			TagDestTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
 		}
 
-		CellRendererPixbuf pix_render;
-		TreeViewColumn complete_column;
-		CellRendererText text_render;
+		readonly CellRendererPixbuf pix_render;
+		readonly TreeViewColumn complete_column;
+		readonly CellRendererText text_render;
 
 		protected TagSelectionWidget (IntPtr raw) : base (raw) { }
 
-		public TagSelectionWidget (TagStore tag_store) : base (new TreeStore (typeof (uint), typeof (string)))
+		public TagSelectionWidget (TagStore tag_store) : base (new TreeStore (typeof (string), typeof (string)))
 		{
 
 			HeadersVisible = false;
@@ -64,7 +63,7 @@ namespace FSpot
 
 			pix_render = new CellRendererPixbuf ();
 			complete_column.PackStart (pix_render, false);
-			complete_column.SetCellDataFunc (pix_render, new TreeCellDataFunc (IconDataFunc));
+			complete_column.SetCellDataFunc (pix_render, IconDataFunc);
 			//complete_column.AddAttribute (pix_render, "pixbuf", OpenIconColumn);
 
 			//icon_column = AppendColumn ("icon",
@@ -73,7 +72,7 @@ namespace FSpot
 
 			text_render = new CellRendererText ();
 			complete_column.PackStart (text_render, true);
-			complete_column.SetCellDataFunc (text_render, new TreeCellDataFunc (NameDataFunc));
+			complete_column.SetCellDataFunc (text_render, NameDataFunc);
 
 			AppendColumn (complete_column);
 
@@ -92,7 +91,7 @@ namespace FSpot
 			SearchColumn = NameColumn;
 
 			// Transparent white
-			empty_pixbuf.Fill (0xffffff00);
+			EmptyPixbuf.Fill (0xffffff00);
 
 
 			/* set up drag and drop */
@@ -101,12 +100,12 @@ namespace FSpot
 			DragBegin += HandleDragBegin;
 
 			Gtk.Drag.SourceSet (this, Gdk.ModifierType.Button1Mask | Gdk.ModifierType.Button3Mask,
-					   (TargetEntry[])tagSourceTargetList, DragAction.Copy | DragAction.Move);
+					   (TargetEntry[])TagSourceTargetList, DragAction.Copy | DragAction.Move);
 
 			DragDataReceived += HandleDragDataReceived;
 			DragMotion += HandleDragMotion;
 
-			Gtk.Drag.DestSet (this, DestDefaults.All, (TargetEntry[])tagDestTargetList, DragAction.Copy | DragAction.Move);
+			Gtk.Drag.DestSet (this, DestDefaults.All, (TargetEntry[])TagDestTargetList, DragAction.Copy | DragAction.Move);
 		}
 		public Tag TagAtPosition (double x, double y)
 		{
@@ -140,14 +139,17 @@ namespace FSpot
 		}
 
 		// Loading up the store.
-		void LoadCategory (Category category, TreeIter parent_iter)
+		void LoadCategory (Tag category, TreeIter parent_iter)
 		{
+			if (category.Children == null)
+				tagStore.SetChildren (category);
+
 			IList<Tag> tags = category.Children;
 
 			foreach (Tag t in tags) {
-				TreeIter iter = (Model as TreeStore).AppendValues (parent_iter, t.Id, t.Name);
-				if (t is Category)
-					LoadCategory (t as Category, iter);
+				TreeIter iter = (Model as TreeStore).AppendValues (parent_iter, t.Id.ToString (), t.Name);
+				if (t.IsCategory)
+					LoadCategory (t, iter);
 			}
 		}
 
@@ -161,19 +163,17 @@ namespace FSpot
 			ScrollToCell (path, null, false, 0, 0);
 		}
 
-		public Tag[] TagHighlight {
+		public IEnumerable<Tag> TagHighlight {
 			get {
 				TreePath[] rows = Selection.GetSelectedRows (out var model);
 
-				Tag[] tags = new Tag[rows.Length];
-				int i = 0;
+				var tags = new List<Tag> (rows.Length);
 
 				foreach (TreePath path in rows) {
-					GLib.Value value = new GLib.Value ();
+					var value = new GLib.Value ();
 					Model.GetIter (out var iter, path);
 					Model.GetValue (iter, IdColumn, ref value);
-					tags[i] = tagStore.Get (Guid.Parse ((string)value));
-					i++;
+					tags.Add (tagStore.Get (Guid.Parse ((string)value)));
 				}
 				return tags;
 			}
@@ -200,8 +200,8 @@ namespace FSpot
 
 			foreach (Tag t in tagStore.RootCategory.Children) {
 				TreeIter iter = (Model as TreeStore).AppendValues (t.Id, t.Name);
-				if (t is Category)
-					LoadCategory (t as Category, iter);
+				if (t.IsCategory)
+					LoadCategory (t, iter);
 			}
 		}
 
@@ -211,18 +211,18 @@ namespace FSpot
 			// FIXME this should be themable but Gtk# doesn't give me access to the proper
 			// members in GtkStyle for that.
 			/*
-			if (tag is Category)
-				renderer.CellBackground = ToHashColor (this.Style.MidColors [(int) Gtk.StateType.Normal]);
+			if (tag.IsCategory)
+				renderer.CellBackground = ToHashColor (Style.MidColors [(int) Gtk.StateType.Normal]);
 			else
-				renderer.CellBackground = ToHashColor (this.Style.LightColors [(int) Gtk.StateType.Normal]);
+				renderer.CellBackground = ToHashColor (Style.LightColors [(int) Gtk.StateType.Normal]);
 			*/
 		}
 
 		void IconDataFunc (TreeViewColumn column, CellRenderer renderer, TreeModel model, TreeIter iter)
 		{
-			GLib.Value value = new GLib.Value ();
+			var value = new GLib.Value () ;
 			Model.GetValue (iter, IdColumn, ref value);
-			Tag tag = tagStore.Get (Guid.Parse  ((string)value));
+			Tag tag = tagStore.Get (Guid.Parse((string)value));
 
 			if (tag == null)
 				return;
@@ -232,14 +232,13 @@ namespace FSpot
 			if (tag.TagIcon.SizedIcon != null) {
 				if (FSpot.ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
 					//FIXME, we're leaking a pixbuf here
-					using (Gdk.Pixbuf temp = tag.TagIcon.SizedIcon.Copy ()) {
-						FSpot.ColorManagement.ApplyProfile (temp, screen_profile);
-						(renderer as CellRendererPixbuf).Pixbuf = temp;
-					}
+					using Gdk.Pixbuf temp = tag.TagIcon.SizedIcon.Copy ();
+					FSpot.ColorManagement.ApplyProfile (temp, screen_profile);
+					(renderer as CellRendererPixbuf).Pixbuf = temp;
 				} else
 					(renderer as CellRendererPixbuf).Pixbuf = tag.TagIcon.SizedIcon;
 			} else
-				(renderer as CellRendererPixbuf).Pixbuf = empty_pixbuf;
+				(renderer as CellRendererPixbuf).Pixbuf = EmptyPixbuf;
 		}
 
 		void NameDataFunc (TreeViewColumn column, CellRenderer renderer, TreeModel model, TreeIter iter)
@@ -248,9 +247,8 @@ namespace FSpot
 			if (model == null)
 				return;
 
-			GLib.Value value = new GLib.Value ();
+			var value = new GLib.Value ();
 			Model.GetValue (iter, IdColumn, ref value);
-
 			Tag tag = tagStore.Get (Guid.Parse ((string)value));
 			if (tag == null)
 				return;
@@ -512,7 +510,7 @@ namespace FSpot
 			// Check that the tag doesn't already exist
 			if (string.Compare (args.NewText, tag.Name, true) != 0 &&
 				tagStore.GetTagByName (args.NewText) != null) {
-				HigMessageDialog md = new HigMessageDialog (App.Instance.Organizer.Window,
+				using var md = new HigMessageDialog (App.Instance.Organizer.Window,
 					DialogFlags.DestroyWithParent,
 					MessageType.Warning, ButtonsType.Ok,
 					Catalog.GetString ("Error renaming tag"),
@@ -534,7 +532,7 @@ namespace FSpot
 
 		void HandleDragBegin (object sender, DragBeginArgs args)
 		{
-			Tag[] tags = TagHighlight;
+			var tags = TagHighlight.ToArray ();
 			int len = tags.Length;
 			int size = 32;
 			int csize = size / 2 + len * size / 2 + 2;
@@ -648,20 +646,20 @@ namespace FSpot
 			}
 
 			if (args.Info == DragDropTargets.TagListEntry.Info) {
-				Category parent;
+				Tag parent;
 				if (position == TreeViewDropPosition.Before || position == TreeViewDropPosition.After) {
 					parent = tag.Category;
 				} else {
-					parent = tag as Category;
+					parent = tag;
 				}
 
-				if (parent == null || TagHighlight.Length < 1) {
+				if (parent == null || !TagHighlight.Any ()) {
 					args.RetVal = false;
 					return;
 				}
 
 				int moved_count = 0;
-				Tag[] highlighted_tags = TagHighlight;
+				var highlighted_tags = TagHighlight;
 				foreach (Tag child in TagHighlight) {
 					// FIXME with this reparenting via dnd, you cannot move a tag to root.
 					if (child != parent && child.Category != parent && !child.IsAncestorOf (parent)) {

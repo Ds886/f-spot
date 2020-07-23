@@ -57,7 +57,7 @@ namespace GLib {
 			}
 		}
 
-		[DllImport("libgio-2.0-0.dll")]
+		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_themed_icon_get_names(IntPtr raw);
 
 		[GLib.Property ("names")]

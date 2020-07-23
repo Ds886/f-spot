@@ -209,27 +209,27 @@ namespace FSpot.Query
 
 		}
 
-		public void PhotoTagsChanged (Tag[] tags)
+		public void PhotoTagsChanged (IEnumerable<Tag> tags)
 		{
 			logic_widget.PhotoTagsChanged (tags);
 		}
 
-		public void Include (Tag[] tags)
+		public void Include (IEnumerable<Tag> tags)
 		{
 			logic_widget.Include (tags);
 		}
 
-		public void UnInclude (Tag[] tags)
+		public void UnInclude (IEnumerable<Tag> tags)
 		{
 			logic_widget.UnInclude (tags);
 		}
 
-		public void Require (Tag[] tags)
+		public void Require (IEnumerable<Tag> tags)
 		{
 			logic_widget.Require (tags);
 		}
 
-		public void UnRequire (Tag[] tags)
+		public void UnRequire (IEnumerable<Tag> tags)
 		{
 			logic_widget.UnRequire (tags);
 		}

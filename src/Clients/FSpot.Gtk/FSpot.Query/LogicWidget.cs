@@ -10,29 +10,11 @@
 // Copyright (C) 2006 Larry Ewing
 // Copyright (C) 2006-2007 Gabriel Burt
 //
-//  Permission is hereby granted, free of charge, to any person obtaining
-//  a copy of this software and associated documentation files (the
-//  "Software"), to deal in the Software without restriction, including
-//  without limitation the rights to use, copy, modify, merge, publish,
-//  distribute, sublicense, and/or sell copies of the Software, and to
-//  permit persons to whom the Software is furnished to do so, subject to
-//  the following conditions:
-//
-//  The above copyright notice and this permission notice shall be
-//  included in all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-//  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-//  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-//  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-//  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-//  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Mono.Unix;
 
@@ -280,7 +262,7 @@ namespace FSpot.Query
 
 		/** Helper Functions **/
 
-		public void PhotoTagsChanged (Tag[] tags)
+		public void PhotoTagsChanged (IEnumerable<Tag> tags)
 		{
 			bool refresh_required = false;
 
@@ -324,11 +306,11 @@ namespace FSpot.Query
 		}
 
 		// Add a tag or group of tags to the rootTerm, at the end of the Box
-		public void Include (Tag[] tags)
+		public void Include (IEnumerable<Tag> tags)
 		{
 			// Filter out any tags that are already included
 			// FIXME: Does this really need to be set to a length?
-			List<Tag> new_tags = new List<Tag> (tags.Length);
+			List<Tag> new_tags = new List<Tag> (tags.Count ());
 			foreach (Tag tag in tags) {
 				if (!rootTerm.TagIncluded (tag))
 					new_tags.Add (tag);
@@ -343,9 +325,9 @@ namespace FSpot.Query
 			InsertTerm (tags, rootTerm, null);
 		}
 
-		public void UnInclude (Tag[] tags)
+		public void UnInclude (IEnumerable<Tag> tags)
 		{
-			var new_tags = new List<Tag> (tags.Length);
+			var new_tags = new List<Tag> (tags.Count ());
 			foreach (Tag tag in tags) {
 				if (rootTerm.TagIncluded (tag))
 					new_tags.Add (tag);
@@ -376,13 +358,13 @@ namespace FSpot.Query
 		}
 
 		// AND this tag with all terms
-		public void Require (Tag[] tags)
+		public void Require (IEnumerable<Tag> tags)
 		{
 			// TODO it would be awesome if this was done by putting parentheses around
 			// OR terms and ANDing the result with this term (eg factored out)
 
 			// Trim out tags that are already required
-			var new_tags = new List<Tag> (tags.Length);
+			var new_tags = new List<Tag> (tags.Count ());
 			foreach (Tag tag in tags) {
 				if (!rootTerm.TagRequired (tag))
 					new_tags.Add (tag);
@@ -413,10 +395,10 @@ namespace FSpot.Query
 			UpdateQuery ();
 		}
 
-		public void UnRequire (Tag[] tags)
+		public void UnRequire (IEnumerable<Tag> tags)
 		{
 			// Trim out tags that are not required
-			var new_tags = new List<Tag> (tags.Length);
+			var new_tags = new List<Tag> (tags.Count ());
 			foreach (Tag tag in tags) {
 				if (rootTerm.TagRequired (tag))
 					new_tags.Add (tag);
@@ -442,7 +424,7 @@ namespace FSpot.Query
 			UpdateQuery ();
 		}
 
-		public List<Literal> InsertTerm (Tag[] tags, Term parent, Literal after)
+		public List<Literal> InsertTerm (IEnumerable<Tag> tags, Term parent, Literal after)
 		{
 			int position;
 			if (after != null)

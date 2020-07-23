@@ -80,7 +80,7 @@ namespace FSpot
 			return photos;
 		}
 
-		public static void SetTagsData (this SelectionData selectionData, Tag[] tags, Atom target)
+		public static void SetTagsData (this SelectionData selectionData, IEnumerable<Tag> tags, Atom target)
 		{
 			var data = new List<byte> ();// new byte[tags.Length * sizeof (uint)];
 

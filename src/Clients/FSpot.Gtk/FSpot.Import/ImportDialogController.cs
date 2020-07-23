@@ -31,6 +31,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 
 using FSpot.Core;
@@ -45,6 +46,7 @@ using Gtk;
 using Hyena;
 
 using Mono.Unix;
+using Thread = System.Threading.Thread;
 
 namespace FSpot.Import
 {
@@ -136,29 +138,21 @@ namespace FSpot.Import
 
 		#endregion
 
-		#region Source Scanning
-
 		List<ImportSource> sources;
-		public List<ImportSource> Sources => sources ?? (sources = ScanSources ());
+		public List<ImportSource> Sources => sources ??= ScanSources ();
 
 		static List<ImportSource> ScanSources ()
 		{
-			var monitor = GLib.VolumeMonitor.Default;
 			var sources = new List<ImportSource> ();
-			foreach (var mount in monitor.Mounts) {
-				var root = new SafeUri (mount.Root.Path);
-
-				var themedIcon = mount.Icon as GLib.ThemedIcon;
-				if (themedIcon != null && themedIcon.Names.Length > 0) {
-					sources.Add (new ImportSource (root, mount.Name, themedIcon.Names[0]));
-				} else {
-					sources.Add (new ImportSource (root, mount.Name, null));
-				}
+			foreach (var drive in DriveInfo.GetDrives ()) {
+				var root = new SafeUri (drive.RootDirectory.FullName);
+				// Fixme, add icons?
+				var label = !string.IsNullOrEmpty (drive.VolumeLabel) ? drive.VolumeLabel : "Local Disk";
+				sources.Add (new ImportSource (root, $"{label} ({drive.Name})", null));
 			}
+
 			return sources;
 		}
-
-		#endregion
 
 		#region Status Reporting
 
@@ -321,18 +315,18 @@ namespace FSpot.Import
 			foreach (var tagname in tags) {
 				var tag = tagStore.GetTagByName (tagname);
 				if (tag == null) {
-					tag = tagStore.CreateCategory (importCategory, tagname, false);
+					tag = tagStore.CreateTag (importCategory, tagname, false, true);
 					tagStore.Commit (tag);
 				}
 				attachTags.Add (tag);
 			}
 		}
 
-		Category GetImportedTagsCategory ()
+		Tag GetImportedTagsCategory ()
 		{
-			var defaultCategory = tagStore.GetTagByName (Catalog.GetString ("Imported Tags")) as Category;
+			var defaultCategory = tagStore.GetTagByName (Catalog.GetString ("Imported Tags"));
 			if (defaultCategory == null) {
-				defaultCategory = tagStore.CreateCategory (null, Catalog.GetString ("Imported Tags"), false);
+				defaultCategory = tagStore.CreateTag (null, Catalog.GetString ("Imported Tags"), false, true);
 				defaultCategory.ThemeIconName = "gtk-new";
 			}
 			return defaultCategory;

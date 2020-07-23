@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -111,10 +112,12 @@ namespace FSpot
 						db = new Db ();//Container.Resolve<IImageFileFactory> (), Container.Resolve<IThumbnailService> (), new UpdaterUI ());
 
 						try {
-							db.Init (Path.Combine (Configuration.BaseDirectory, Configuration.DatabaseName), true);
+							db.Init (Path.Combine (Configuration.BaseDirectory, Configuration.DatabaseName));
 						} catch (Exception e) {
 							//new FSpot.UI.Dialog.RepairDbDialog (e, db.Repair (), null);
 							//db.Init (Path.Combine (Configuration.BaseDirectory, Configuration.DatabaseName), true);
+							Console.WriteLine (e.Message);
+							Environment.Exit (-1);
 						}
 					}
 				}

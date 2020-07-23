@@ -44,11 +44,11 @@ namespace FSpot.Widgets
 
 		public bool Completing { get; private set; }
 
-		public LogicEntryCompletion (Entry entry, TreeModel tree_model)
+		public LogicEntryCompletion (Entry entry, TreeModel treeModel)
 		{
 			this.entry = entry;
 
-			Model = new DependentListStore (tree_model);
+			Model = new DependentListStore (treeModel);
 
 			InlineCompletion = false;
 			MinimumKeyLength = 1;
@@ -70,10 +70,10 @@ namespace FSpot.Widgets
 			//Log.DebugFormat ("match selected..{0}", name);
 
 			int pos = entry.Position;
-			string updated_text = completion_logic.ReplaceKey (entry.Text, name, ref pos);
+			string updatedText = completion_logic.ReplaceKey (entry.Text, name, ref pos);
 
 			Completing = true;
-			entry.Text = updated_text;
+			entry.Text = updatedText;
 			entry.Position = pos;
 			Completing = false;
 
@@ -87,7 +87,7 @@ namespace FSpot.Widgets
 			if (Completing)
 				return false;
 
-			key = key == null ? null : key.Normalize (NormalizationForm.FormC);
+			key = key?.Normalize (NormalizationForm.FormC);
 			string name = completion.Model.GetValue (iter, completion.TextColumn) as string;
 			int pos = entry.Position - 1;
 			return completion_logic.MatchFunc (name, key, pos);

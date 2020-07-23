@@ -7,25 +7,7 @@
 // Copyright (C) 2007 Novell, Inc.
 // Copyright (C) 2007 Gabriel Burt
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using Gtk;
 
@@ -44,12 +26,12 @@ public class DependentListStore : ListStore
 
 			parent = value;
 
-			GLib.GType [] types = new GLib.GType [parent.NColumns];
+			var types = new GLib.GType [parent.NColumns];
 			for (int i = 0; i < parent.NColumns; i++) {
 				types [i] = parent.GetColumnType (i);
 			}
 
-			this.ColumnTypes = types;
+			ColumnTypes = types;
 
 			Copy (parent, this);
 
@@ -60,9 +42,9 @@ public class DependentListStore : ListStore
 		}
 	}
 
-	public DependentListStore (TreeModel tree_model)
+	public DependentListStore (TreeModel treeModel)
 	{
-		Parent = tree_model;
+		Parent = treeModel;
 	}
 
 	/* FIXME: triggering a recopy of the parent doesn't seem to be enough to
@@ -102,33 +84,32 @@ public class DependentListStore : ListStore
 	{
 		list.Clear ();
 
-		TreeIter tree_iter;
-		if (tree.IterChildren (out tree_iter)) {
-			Copy (tree, tree_iter, list, true);
+		if (tree.IterChildren (out var treeIter)) {
+			Copy (tree, treeIter, list, true);
 		}
 	}
 
-	public static void Copy (TreeModel tree, TreeIter tree_iter, ListStore list, bool first)
+	public static void Copy (TreeModel tree, TreeIter treeIter, ListStore list, bool first)
 	{
 		// Copy this iter's values to the list
-		TreeIter list_iter = list.Append ();
+		TreeIter listIter = list.Append ();
 		for (int i = 0; i < list.NColumns; i++) {
-			list.SetValue (list_iter, i, tree.GetValue (tree_iter, i));
+			var val = tree.GetValue (treeIter, i);
+			list.SetValue (listIter, i, val);
 			if (i == 1) {
 				//Console.WriteLine("Copying {0}", list.GetValue(list_iter, i));
 			}
 		}
 
 		// Copy the first child, which will trigger the copy if its siblings (and their children)
-		TreeIter child_iter;
-		if (tree.IterChildren (out child_iter, tree_iter)) {
+		if (tree.IterChildren (out var child_iter, treeIter)) {
 			Copy (tree, child_iter, list, true);
 		}
 
 		// Add siblings and their children if we are the first child, otherwise doing so would repeat
 		if (first) {
-			while (tree.IterNext (ref tree_iter)) {
-				Copy (tree, tree_iter, list, false);
+			while (tree.IterNext (ref treeIter)) {
+				Copy (tree, treeIter, list, false);
 			}
 		}
 	}

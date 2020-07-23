@@ -164,7 +164,7 @@ namespace FSpot.Query
 				Pixbuf scaled = null;
 				scaled = Tag.TagIcon.Icon;
 
-				for (Category category = Tag.Category; category != null && scaled == null; category = category.Category) {
+				for (var category = Tag.Category; category != null && scaled == null; category = category.Category) {
 					scaled = category.TagIcon.Icon;
 				}
 
@@ -233,9 +233,9 @@ namespace FSpot.Query
 		{
 			var ids = new StringBuilder (Tag.Id.ToString ());
 
-			if (Tag is Category category) {
+			if (Tag.IsCategory) {
 				var tags = new List<Tag> ();
-				category.AddDescendentsTo (tags);
+				tag.AddDescendentsTo (tags);
 
 				foreach (var t in tags) {
 					ids.Append (", " + t.Id);

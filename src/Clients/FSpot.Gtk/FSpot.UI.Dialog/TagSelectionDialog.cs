@@ -31,6 +31,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System.Collections.Generic;
 using Gtk;
 
 using FSpot.Database;
@@ -53,7 +54,7 @@ namespace FSpot.UI.Dialog
 			tagSelectionWidget.Show ();
 		}
 
-		public new Tag[] Run ()
+		public new IEnumerable<Tag> Run ()
 		{
 			int response = base.Run ();
 			if ((ResponseType)response == ResponseType.Ok)

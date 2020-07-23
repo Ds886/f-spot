@@ -98,7 +98,7 @@ namespace FSpot.Widgets
 
 				Pixbuf icon = t.TagIcon.Icon;
 
-				Category category = t.Category;
+				var category = t.Category;
 				while (icon == null && category != null) {
 					icon = category.TagIcon.Icon;
 					category = category.Category;

@@ -54,7 +54,7 @@ namespace FSpot.Database
 		//	return backup_path;
 		//}
 
-		public void Init (string path, bool createIfMissing)
+		public void Init (string path)
 		{
 			uint timer = Log.DebugTimerStart ();
 			//Path = path;

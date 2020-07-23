@@ -6,7 +6,7 @@
 
 using System;
 using System.Collections.Generic;
-using FSpot.Cms;
+
 using FSpot.Database;
 using FSpot.Models;
 using FSpot.Settings;
@@ -58,8 +58,8 @@ namespace FSpot.UI.Dialog
 			get { return last_valid_name; }
 		}
 
-		public Category TagCategory {
-			get { return categories[category_option_menu.Active] as Category; }
+		public Tag TagCategory {
+			get { return categories[category_option_menu.Active]; }
 		}
 
 		List<Tag> categories;
@@ -82,25 +82,25 @@ namespace FSpot.UI.Dialog
 			}
 		}
 
-		bool TagNameExistsInCategory (string name, Category category)
+		bool TagNameExistsInCategory (string name, Tag category)
 		{
 			foreach (Tag tag in category.Children) {
 				if (string.Compare (tag.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
 					return true;
 
-				if (tag is Category && TagNameExistsInCategory (name, tag as Category))
+				if (tag.IsCategory && TagNameExistsInCategory (name, tag))
 					return true;
 			}
 
 			return false;
 		}
 
-		void PopulateCategories (List<Tag> categories, Category parent)
+		void PopulateCategories (List<Tag> categories, Tag parent)
 		{
 			foreach (Tag tag in parent.Children) {
-				if (tag is Category && tag != this.tag && !this.tag.IsAncestorOf (tag)) {
+				if (tag.IsCategory && tag != this.tag && !this.tag.IsAncestorOf (tag)) {
 					categories.Add (tag);
-					PopulateCategories (categories, tag as Category);
+					PopulateCategories (categories, tag);
 				}
 			}
 		}
@@ -134,7 +134,7 @@ namespace FSpot.UI.Dialog
 			int history = 0;
 			int i = 0;
 			categories = new List<Tag> ();
-			Category root = db.Tags.RootCategory;
+			var root = db.Tags.RootCategory;
 			categories.Add (root);
 			PopulateCategories (categories, root);
 
@@ -151,7 +151,7 @@ namespace FSpot.UI.Dialog
 			ListStore store = new ListStore (typeof (Gdk.Pixbuf), typeof (string));
 			category_option_menu.Model = store;
 
-			foreach (Category category in categories) {
+			foreach (var category in categories) {
 				if (t.Category == category)
 					history = i;
 

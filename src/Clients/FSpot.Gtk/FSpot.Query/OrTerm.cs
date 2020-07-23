@@ -61,9 +61,9 @@ namespace FSpot.Query
 		{
 		}
 
-		public static OrTerm FromTags (Tag[] fromTags)
+		public static OrTerm FromTags (IEnumerable<Tag> fromTags)
 		{
-			if (fromTags == null || fromTags.Length == 0)
+			if (fromTags == null || !fromTags.Any())
 				return null;
 
 			var or = new OrTerm (null, null);

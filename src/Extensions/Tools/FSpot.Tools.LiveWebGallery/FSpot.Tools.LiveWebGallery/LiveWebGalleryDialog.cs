@@ -9,6 +9,7 @@ using System.Net;
 using System.Reflection;
 
 using FSpot.Models;
+using FSpot.Widgets;
 
 using Gtk;
 

@@ -12,8 +12,8 @@ namespace FSpot
 {
 	public static class Constants
 	{
-		public static readonly Category RootCategory =
-			new Category (null, Guid.Empty, Catalog.GetString ("(None)"));
+		public static readonly Tag RootCategory =
+			new Tag (null, Guid.Empty, Catalog.GetString ("(None)"));
 
 		public static readonly Guid FavoriteTagGuid = new Guid ("920CAAD8-6480-4D8C-9E0A-468C94E777C1");
 		public static readonly Guid HiddenTagGuid = new Guid ("8D8C0F4D-2FE4-4627-AC9A-7C273004B3B5");

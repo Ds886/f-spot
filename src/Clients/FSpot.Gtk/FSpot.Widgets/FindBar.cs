@@ -11,25 +11,7 @@
 // Copyright (C) 2010 Daniel Köb
 // Copyright (C) 2007-2008 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Text.RegularExpressions;
@@ -90,8 +72,9 @@ namespace FSpot.Widgets
 
 			box.PackStart (entry, true, true, 0);
 
-			var clear_button = new Button ();
-			clear_button.Add (new Image ("gtk-close", IconSize.Button));
+			using var clear_button = new Button {
+				new Image ("gtk-close", IconSize.Button)
+			};
 			clear_button.Clicked += HandleCloseButtonClicked;
 			clear_button.Relief = ReliefStyle.None;
 			box.PackStart (clear_button, false, false, 0);
@@ -108,8 +91,8 @@ namespace FSpot.Widgets
 
 			//int start = args.Position - args.Length;
 
-			for (int i = 0; i < args.Text.Length; i++) {
-				char c = args.Text[i];
+			foreach (var c in args.Text)
+			{
 				if (c == '(')
 					open_parens++;
 				else if (c == ')')
@@ -117,8 +100,8 @@ namespace FSpot.Widgets
 			}
 
 			int pos = entry.Position + 1;
-			int close_parens_needed = open_parens - close_parens;
-			for (int i = 0; i < close_parens_needed; i++) {
+			int closeParensNeeded = open_parens - close_parens;
+			for (int i = 0; i < closeParensNeeded; i++) {
 				entry.TextInserted -= HandleEntryTextInserted;
 				entry.InsertText (")", ref pos);
 				close_parens++;
@@ -137,10 +120,10 @@ namespace FSpot.Widgets
 			//Log.DebugFormat ("start {0} end {1} len {2} last {3}", args.StartPos, args.EndPos, length, last_entry_text);
 			string txt = length < 0 ? last_entry_text : last_entry_text.Substring (args.StartPos, length);
 
-			for (int i = 0; i < txt.Length; i++) {
-				if (txt[i] == '(')
+			foreach (var t in txt) {
+				if (t == '(')
 					open_parens--;
-				else if (txt[i] == ')')
+				else if (t == ')')
 					close_parens--;
 			}
 
@@ -190,28 +173,28 @@ namespace FSpot.Widgets
 
 		// OPS The operators we support, case insensitive
 		//private static string op_str = "(?'Ops' or | and |, | \\s+ )";
-		static string op_str = "(?'Ops' " + Catalog.GetString ("or") + " | " + Catalog.GetString ("and") + " |, )";
+		static readonly string OpStr = "(?'Ops' " + Catalog.GetString ("or") + " | " + Catalog.GetString ("and") + " |, )";
 
 		// Match literals, eg tags or other text to search on
-		static string literal_str = "[^{0}{1}]+?";
+		static readonly string LiteralStr = "[^{0}{1}]+?";
 		//private static string not_literal_str = "not\\s*\\((?'NotTag'[^{0}{1}]+)\\)";
 
 		// Match a group surrounded by parenthesis and one or more terms separated by operators
-		static string term_str = "(((?'Open'{0})(?'Pre'[^{0}{1}]*?))+((?'Close-Open'{1})(?'Post'[^{0}{1}]*?))+)*?(?(Open)(?!))";
+		static readonly string TermStr = "(((?'Open'{0})(?'Pre'[^{0}{1}]*?))+((?'Close-Open'{1})(?'Post'[^{0}{1}]*?))+)*?(?(Open)(?!))";
 
 		// Match a group surrounded by parenthesis and one or more terms separated by operators, surrounded by not()
 		//private static string not_term_str = string.Format("not\\s*(?'NotTerm'{0})", term_str);
 
 		// Match a simple term or a group term or a not(group term)
 		//private static string comb_term_str = string.Format ("(?'Term'{0}|{2}|{1})", simple_term_str, term_str, not_term_str);
-		static string comb_term_str =
-			$"(?'Term'{literal_str}|{term_str})|not\\s*\\((?'NotTerm'{literal_str})\\)|not\\s*(?'NotTerm'{term_str})";
+		static readonly string CombTermStr =
+			$"(?'Term'{LiteralStr}|{TermStr})|not\\s*\\((?'NotTerm'{LiteralStr})\\)|not\\s*(?'NotTerm'{TermStr})";
 
 		// Match a single term or a set of terms separated by operators
-		static string regex_str = $"^((?'Terms'{comb_term_str}){op_str})*(?'Terms'{comb_term_str})$";
+		static readonly string RegexStr = $"^((?'Terms'{CombTermStr}){OpStr})*(?'Terms'{CombTermStr})$";
 
-		static Regex term_regex = new Regex (
-						  string.Format (regex_str, "\\(", "\\)"),
+		static readonly Regex TermRegex = new Regex (
+						  string.Format (RegexStr, "\\(", "\\)"),
 						  RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 		// Breaking the query the user typed into something useful involves running
@@ -232,7 +215,7 @@ namespace FSpot.Widgets
 			//Log.DebugFormat (indent + "Have text: {0}", txt);
 
 			// Match the query the user typed against our regular expression
-			Match match = term_regex.Match (txt);
+			Match match = TermRegex.Match (txt);
 
 			if (!match.Success) {
 				//Log.Debug (indent + "Failed to match.");

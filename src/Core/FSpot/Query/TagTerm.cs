@@ -40,7 +40,7 @@ namespace FSpot.Query
 {
 	public class TagTerm : LogicalTerm
 	{
-		public Tag Tag { get; private set; }
+		public Tag Tag { get; }
 
 		public TagTerm (Tag tag)
 		{
@@ -62,8 +62,8 @@ namespace FSpot.Query
 			var tagList = new List<Tag> ();
 			foreach (var tag in tags) {
 				tagList.Add (tag);
-				if (tag is Category category) {
-					category.AddDescendentsTo (tagList);
+				if (tag.IsCategory) {
+					tag.AddDescendentsTo (tagList);
 				}
 			}
 			return tagList.Select (t => t.Id.ToString ()).ToList ();

@@ -54,12 +54,14 @@ namespace FSpot
 
 		static Profile x_profile;
 		public static Profile XProfile {
-			get { return x_profile ?? (x_profile = Profile.GetScreenProfile(Gdk.Screen.Default)); }
+			get { return x_profile ??= Profile.GetScreenProfile(Gdk.Screen.Default); }
 		}
 
 		static void BuildProfiles ()
 		{
 			profiles = new Dictionary<string, Profile> ();
+			// FIXME,
+			return;
 
 			var p = Profile.CreateStandardRgb ();
 			if (!profiles.ContainsKey (p.ProductDescription))
@@ -72,6 +74,7 @@ namespace FSpot
 			foreach (var path in search_dir)
 				if (!profiles.ContainsKey (path))
 					AddProfiles (path);
+
 			if (XProfile != null)
 				if (!profiles.ContainsKey ("_x_profile_"))
 					profiles.Add ("_x_profile_", XProfile);

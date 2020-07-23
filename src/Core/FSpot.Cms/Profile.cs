@@ -75,6 +75,7 @@ namespace FSpot.Cms
 
 		public static Profile GetScreenProfile (Gdk.Screen screen)
 		{
+			// FIXME, 
 			if (screen == null)
 				throw new ArgumentNullException (nameof (screen));
 
@@ -302,6 +303,8 @@ namespace FSpot.Cms
 
 		public string ProductDescription {
 			get {
+				// FIXME,
+				return "ProductDescription";
 				lock (srgb) {
 					var ret = new StringBuilder (128);
 					NativeMethods.CmsGetProfileInfo (

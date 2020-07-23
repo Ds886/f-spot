@@ -51,7 +51,7 @@ namespace FSpot.Database
 
 		Tag hidden;
 
-		public Category RootCategory { get; }
+		public Tag RootCategory { get; }
 
 		public Tag Hidden {
 			get { return hidden; }
@@ -79,7 +79,7 @@ namespace FSpot.Database
 
 		public Tag GetTagByName (string name)
 		{
-			var tag = Context.Tags.FirstOrDefault (x => string.Compare (x.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
+			var tag = Context.Tags.FirstOrDefault (x => x.Name == name);
 			return tag;
 		}
 
@@ -95,7 +95,7 @@ namespace FSpot.Database
 				.Where (x => s.ToLower ().StartsWith (x.Name.ToLower ()))
 				.ToList ();
 
-			if (!tags.Any())
+			if (!tags.Any ())
 				return null;
 
 			tags.Sort ((t1, t2) => t2.Popularity.CompareTo (t1.Popularity));
@@ -111,39 +111,25 @@ namespace FSpot.Database
 		{
 			// Pass 1, get all the tags.
 			var tags = Context.Tags;
-			//IDataReader reader = Database.Query ("SELECT id, name, is_category, sort_priority, icon FROM tags");
-
-			foreach (var tag in tags) { }
-			//while (reader.Read ()) {
-			//	uint id = Convert.ToUInt32 (reader["id"]);
-			//	string name = reader["name"].ToString ();
-			//	bool is_category = (Convert.ToUInt32 (reader["is_category"]) != 0);
-
-			//	Tag tag;
-			//	if (is_category)
-			//		tag = new Category (null, id, name);
-			//	else
-			//		tag = new Tag (null, id, name);
-
+			//foreach (var tag in tags) { }
 			//	if (reader["icon"] != null)
 			//		try {
 			//			SetIconFromString (tag, reader["icon"].ToString ());
 			//		} catch (Exception ex) {
 			//			Log.Exception ("Unable to load icon for tag " + name, ex);
 			//		}
-
-			//	tag.SortPriority = Convert.ToInt32 (reader["sort_priority"]);
 			//}
 
 			// Pass 2, set the parents.
 			foreach (var tag in tags) {
-				if (tag.CategoryId == Guid.Empty)
-					tag.Category = RootCategory;
-				else {
-					tag.Category = Get (tag.CategoryId) as Category;
-					if (tag.Category == null)
-						Log.Warning ("Tag Without category found");
+				try {
+					tag.Category = Get (tag.CategoryId);
+				} catch (Exception ex) {
+					Console.WriteLine (ex.Message);
 				}
+
+				if (tag.Category == null)
+					Log.Warning ("Tag Without category found");
 			}
 
 			//Pass 3, set popularity
@@ -155,7 +141,8 @@ namespace FSpot.Database
 				});
 
 			foreach (var tag in tags) {
-				tag.Popularity = groups.First (x => x.TagId == tag.Id).PhotoCount;
+				var result = groups.FirstOrDefault (x => x.TagId == tag.Id);
+				tag.Popularity = result?.PhotoCount ?? 0;
 			}
 
 			//if (Context.Meta.HiddenTagId.Value != null)
@@ -165,10 +152,11 @@ namespace FSpot.Database
 		public TagStore ()
 		{
 			// The label for the root category is used in new and edit tag dialogs
-			RootCategory = new Category (null, Guid.Empty, Catalog.GetString ("(None)"));
+			RootCategory = new Tag (null, Guid.Empty, Catalog.GetString ("(None)"));
+			LoadAllTags ();
 		}
 
-		Tag InsertTagIntoTable (Category parentCategory, string name, bool isCategory, bool autoicon)
+		Tag InsertTagIntoTable (Tag parentCategory, string name, bool isCategory, bool autoicon)
 		{
 			var tag = new Tag (parentCategory) {
 				Name = name,
@@ -185,12 +173,12 @@ namespace FSpot.Database
 			return tag;
 		}
 
-		public Tag CreateTag (Category category, string name, bool autoicon)
+		public Tag CreateTag (Tag newTag, string name, bool autoicon, bool isCategory)
 		{
-			if (category == null)
-				category = RootCategory;
+			if (newTag == null)
+				newTag = RootCategory;
 
-			var tag = InsertTagIntoTable (category, name, false, autoicon);
+			var tag = InsertTagIntoTable (newTag, name, isCategory, autoicon);
 			tag.IconWasCleared = !autoicon;
 
 			EmitAdded (tag);
@@ -198,28 +186,25 @@ namespace FSpot.Database
 			return tag;
 		}
 
-		public Category CreateCategory (Category parentCategory, string name, bool autoicon)
-		{
-			if (parentCategory == null)
-				parentCategory = RootCategory;
-
-			var tag = InsertTagIntoTable (parentCategory, name, true, autoicon);
-
-			tag.IconWasCleared = !autoicon;
-
-			EmitAdded (tag);
-
-			return tag as Category;
-		}
-
 		public override Tag Get (Guid id)
 		{
 			return id == Guid.Empty ? RootCategory : Context.Tags.FirstOrDefault (x => x.Id == id);
 		}
 
+		public void SetChildren (Tag tag)
+		{
+			if (tag == null)
+				throw new ArgumentNullException (nameof (tag));
+
+			var children = Context.Tags
+				.Where (x => x.CategoryId == tag.Id).ToList ();
+			children.Sort ();
+			tag.Children = children;
+		}
+
 		public override void Remove (Tag item)
 		{
-			var category = item as Category;
+			var category = item;
 			if (category?.Children?.Count > 0)
 				throw new InvalidTagOperationException (category, "Cannot remove category that contains children");
 

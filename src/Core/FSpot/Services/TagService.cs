@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 
 using FSpot.Interfaces;
-using FSpot.Models;
 
 using Tag = FSpot.Models.Tag;
 
@@ -74,8 +73,8 @@ namespace FSpot.Services
 			if (tags == null) throw new ArgumentNullException (nameof (tags));
 
 			foreach (var tag in tags) {
-				if (tag is Category cat)
-					RemoveCategory (media, cat.Children);
+				if (tag.IsCategory)
+					RemoveCategory (media, tag.Children);
 
 				Remove (media, tag);
 			}

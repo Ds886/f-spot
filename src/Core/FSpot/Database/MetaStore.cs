@@ -30,6 +30,7 @@ namespace FSpot.Database
 		{
 			VerifyStoredVersion ();
 		}
+
 		Meta GetByName (string name)
 		{
 			using var context = new FSpotContext ();

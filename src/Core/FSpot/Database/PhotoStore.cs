@@ -324,7 +324,7 @@ namespace FSpot.Database
 			//}
 		}
 
-		public void Remove (Tag[] tags)
+		public void Remove (IEnumerable<Tag> tags)
 		{
 			//Photo[] photos = Query (new OrOperator (tags.Select (t => new TagTerm (t)).ToArray ()));
 

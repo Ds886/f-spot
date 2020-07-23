@@ -24,13 +24,6 @@ namespace FSpot.Database
 		public const string SmugMugExportType = "fspot:SmugMug";
 		public const string Gallery2ExportType = "fspot:Gallery2";
 
-		FSpotContext Context { get; }
-
-		public ExportStore ()
-		{
-			Context = new FSpotContext ();
-		}
-
 		public Export Create (Guid imageId, long imageVersionId, string exportType, string exportToken)
 		{
 			var item = new Export { ImageId = imageId, ImageVersionId = imageVersionId, ExportType = exportType, ExportToken = exportToken };
