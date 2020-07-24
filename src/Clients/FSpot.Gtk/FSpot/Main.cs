@@ -38,12 +38,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-
+using FSpot.Platform;
 using Mono.Addins;
 using Mono.Addins.Setup;
 using Mono.Unix;
 
-using FSpot.Resources;
 using FSpot.Settings;
 using FSpot.Utils;
 
@@ -297,7 +296,8 @@ namespace FSpot
 			//Xwt.Application.InitializeAsGuest (Xwt.ToolkitType.Gtk);
 
 			// init web proxy globally
-			Platform.WebProxy.Init ();
+			// FIXME, Reenable this at some point?
+			//FSpotWebProxy.Init ();
 
 			if (File.Exists (Preferences.Get<string> (Preferences.GtkRc))) {
 				if (File.Exists (Path.Combine (Configuration.BaseDirectory, "gtkrc")))
