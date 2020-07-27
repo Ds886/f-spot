@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using FSpot.Cms;
 using FSpot.Core;
 using FSpot.Database;
 using FSpot.Extensions;
@@ -21,6 +20,7 @@ using FSpot.Models;
 using FSpot.Query;
 using FSpot.Services;
 using FSpot.Settings;
+using FSpot.Tagging;
 using FSpot.UI.Dialog;
 using FSpot.Utils;
 using FSpot.Widgets;
@@ -222,7 +222,7 @@ namespace FSpot
 
 			Database = db;
 
-			var builder = new GtkBeans.Builder ("main_window.ui");
+			using var builder = new GtkBeans.Builder ("main_window.ui");
 			builder.Autoconnect (this);
 
 			//Set the global DefaultColormap. Allows transparency according
@@ -295,7 +295,7 @@ namespace FSpot
 			ss_button.TooltipText = Catalog.GetString ("View photos in a slideshow");
 			toolbar.Insert (ss_button, -1);
 
-			var white_space = new SeparatorToolItem {
+			using var white_space = new SeparatorToolItem {
 				Draw = false,
 				Expand = true
 			};
@@ -875,7 +875,7 @@ namespace FSpot
 				if (t.Icon != null || t.IconWasCleared)
 					continue;
 				// FIXME this needs a lot more work.
-				Pixbuf icon = null;
+				Pixbuf icon;
 				try {
 					var tmp = PhotoLoader.LoadAtMaxSize (query[nums[0]], 128, 128);
 					icon = PixbufUtils.TagIconFromPixbuf (tmp);
@@ -1600,7 +1600,7 @@ namespace FSpot
 		Tag CreateTag (object sender, EventArgs args)
 		{
 			using var dialog = new CreateTagDialog (Database.Tags);
-			return dialog.Execute (CreateTagDialog.TagType.Category, tag_selection_widget.TagHighlight);
+			return dialog.Execute (tag_selection_widget.TagHighlight);
 		}
 
 		public void HandleAttachTagCommand (object obj, EventArgs args)

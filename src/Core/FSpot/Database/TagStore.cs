@@ -47,7 +47,7 @@ namespace FSpot.Database
 
 	public class TagStore : DbStore<Tag>
 	{
-		const string StockIconDbPrefix = "stock_icon:";
+		public const string StockIconDbPrefix = "stock_icon:";
 
 		Tag hidden;
 
@@ -61,21 +61,6 @@ namespace FSpot.Database
 				//HiddenTag.Tag = value;
 			}
 		}
-
-		//static void SetIconFromString (Tag tag, string iconString)
-		//{
-		//	if (iconString == null) {
-		//		tag.Icon = null;
-		//		// IconWasCleared automatically set already, override
-		//		// it in this case since it was NULL in the db.
-		//		tag.IconWasCleared = false;
-		//	} else if (string.IsNullOrEmpty (iconString))
-		//		tag.Icon = null;
-		//	else if (iconString.StartsWith (StockIconDbPrefix, StringComparison.Ordinal))
-		//		tag.Icon = iconString.Substring (StockIconDbPrefix.Length);
-		//	else
-		//		tag.Icon = GdkUtils.Deserialize (Convert.FromBase64String (iconString));
-		//}
 
 		public Tag GetTagByName (string name)
 		{
@@ -111,14 +96,6 @@ namespace FSpot.Database
 		{
 			// Pass 1, get all the tags.
 			var tags = Context.Tags;
-			//foreach (var tag in tags) { }
-			//	if (reader["icon"] != null)
-			//		try {
-			//			SetIconFromString (tag, reader["icon"].ToString ());
-			//		} catch (Exception ex) {
-			//			Log.Exception ("Unable to load icon for tag " + name, ex);
-			//		}
-			//}
 
 			// Pass 2, set the parents.
 			foreach (var tag in tags) {
@@ -191,13 +168,12 @@ namespace FSpot.Database
 			return id == Guid.Empty ? RootCategory : Context.Tags.FirstOrDefault (x => x.Id == id);
 		}
 
-		public void SetChildren (Tag tag)
+		public void GetChildren (Tag tag)
 		{
 			if (tag == null)
 				throw new ArgumentNullException (nameof (tag));
 
-			var children = Context.Tags
-				.Where (x => x.CategoryId == tag.Id).ToList ();
+			var children = Context.Tags.Where (x => x.CategoryId == tag.Id).ToList ();
 			children.Sort ();
 			tag.Children = children;
 		}
@@ -208,29 +184,10 @@ namespace FSpot.Database
 			if (category?.Children?.Count > 0)
 				throw new InvalidTagOperationException (category, "Cannot remove category that contains children");
 
-			//Why set this to null ?
-			//item.Category = null;
-
 			Context.Remove (item);
 			Context.SaveChanges ();
 
 			EmitRemoved (item);
-		}
-
-		string GetIconString (Tag tag)
-		{
-			//if (tag.ThemeIconName != null)
-			//	return StockIconDbPrefix + tag.Icon;
-
-			//if (tag.Icon == null) {
-			//	if (tag.IconWasCleared)
-			//		return string.Empty;
-			//	return null;
-			//}
-
-			//byte[] data = GdkUtils.Serialize (tag.Icon);
-			//return Convert.ToBase64String (data);
-			return string.Empty;
 		}
 
 		public override void Commit (Tag item)

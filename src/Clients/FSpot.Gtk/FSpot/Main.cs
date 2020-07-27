@@ -244,7 +244,7 @@ namespace FSpot
 			if (ApplicationContext.CommandLine.Contains ("view"))
 				view = true;
 
-			if (ApplicationContext.CommandLine.Contains ("debug")) {
+			//if (ApplicationContext.CommandLine.Contains ("debug")) {
 				Log.Debugging = true;
 				// Debug GdkPixbuf critical warnings
 				var logFunc = new GLib.LogFunc (GLib.Log.PrintTraceLogFunction);
@@ -260,7 +260,7 @@ namespace FSpot
 				GLib.Log.SetLogHandler ("GLib-GObject", GLib.LogLevelFlags.Critical, logFunc);
 
 				GLib.Log.SetLogHandler ("GLib-GIO", GLib.LogLevelFlags.Critical, logFunc);
-			}
+			//}
 
 			// Validate command line options
 			if ((import && (view || shutdown || slideshow)) ||

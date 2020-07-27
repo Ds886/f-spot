@@ -27,8 +27,6 @@ namespace FSpot
 {
 	public class TagSelectionWidget : SaneTreeView
 	{
-		readonly TagStore tagStore;
-
 		// FIXME this is a hack.
 		static readonly Pixbuf EmptyPixbuf = new Pixbuf (Colorspace.Rgb, true, 8, 1, 1);
 
@@ -48,43 +46,44 @@ namespace FSpot
 			TagDestTargetList.AddTargetEntry (DragDropTargets.TagListEntry);
 		}
 
-		readonly CellRendererPixbuf pix_render;
-		readonly TreeViewColumn complete_column;
-		readonly CellRendererText text_render;
+		readonly TreeViewColumn completeColumn;
+		readonly CellRendererPixbuf pixbufRender;
+		readonly CellRendererText textRender;
+
+		TagStore TagStore { get; }
+		TreeStore TagTreeStore { get => Model as TreeStore; }
 
 		protected TagSelectionWidget (IntPtr raw) : base (raw) { }
-
-		public TagSelectionWidget (TagStore tag_store) : base (new TreeStore (typeof (string), typeof (string)))
+		public TagSelectionWidget (TagStore tagStore) : base (new TreeStore (typeof (string), typeof (string)))
 		{
-
 			HeadersVisible = false;
 
-			complete_column = new TreeViewColumn ();
+			completeColumn = new TreeViewColumn ();
 
-			pix_render = new CellRendererPixbuf ();
-			complete_column.PackStart (pix_render, false);
-			complete_column.SetCellDataFunc (pix_render, IconDataFunc);
-			//complete_column.AddAttribute (pix_render, "pixbuf", OpenIconColumn);
+			pixbufRender = new CellRendererPixbuf ();
+			completeColumn.PackStart (pixbufRender, false);
+			completeColumn.SetCellDataFunc (pixbufRender, IconDataFunc);
+			//completeColumn.AddAttribute (pixbufRender, "pixbuf", OpenIconColumn);
 
 			//icon_column = AppendColumn ("icon",
 			//, new TreeCellDataFunc (IconDataFunc));
 			//icon_column = AppendColumn ("icon", new CellRendererPixbuf (), new TreeCellDataFunc (IconDataFunc));
 
-			text_render = new CellRendererText ();
-			complete_column.PackStart (text_render, true);
-			complete_column.SetCellDataFunc (text_render, NameDataFunc);
+			textRender = new CellRendererText ();
+			completeColumn.PackStart (textRender, true);
+			completeColumn.SetCellDataFunc (textRender, NameDataFunc);
 
-			AppendColumn (complete_column);
+			AppendColumn (completeColumn);
 
-			tagStore = tag_store;
+			TagStore = tagStore;
 
 			Update ();
 
 			ExpandDefaults ();
 
-			tag_store.ItemsAdded += HandleTagsAdded;
-			tag_store.ItemsRemoved += HandleTagsRemoved;
-			tag_store.ItemsChanged += HandleTagsChanged;
+			TagStore.ItemsAdded += HandleTagsAdded;
+			TagStore.ItemsRemoved += HandleTagsRemoved;
+			TagStore.ItemsChanged += HandleTagsChanged;
 
 			// TODO make the search find tags that are not currently expanded
 			EnableSearch = true;
@@ -107,6 +106,7 @@ namespace FSpot
 
 			Gtk.Drag.DestSet (this, DestDefaults.All, (TargetEntry[])TagDestTargetList, DragAction.Copy | DragAction.Move);
 		}
+
 		public Tag TagAtPosition (double x, double y)
 		{
 			return TagAtPosition ((int)x, (int)y);
@@ -115,39 +115,38 @@ namespace FSpot
 		public Tag TagAtPosition (int x, int y)
 		{
 			// Work out which tag we're dropping onto
-			if (!GetPathAtPos (x, y, out var path))
-				return null;
+			if (GetPathAtPos (x, y, out var path))
+				return TagByPath (path);
 
-			return TagByPath (path);
+			return null;
 		}
 
 		public Tag TagByPath (TreePath path)
 		{
-			if (!Model.GetIter (out var iter, path))
-				return null;
+			if (Model.GetIter (out var iter, path))
+				return TagByIter (iter);
 
-			return TagByIter (iter);
+			return null;
 		}
 
 		public Tag TagByIter (TreeIter iter)
 		{
-			GLib.Value val = new GLib.Value ();
-
+			var val = new GLib.Value ();
 			Model.GetValue (iter, IdColumn, ref val);
 
-			return tagStore.Get (Guid.Parse ((string)val));
+			return TagStore.Get (Guid.Parse ((string)val));
 		}
 
 		// Loading up the store.
-		void LoadCategory (Tag category, TreeIter parent_iter)
-		{
+		void LoadCategory (Tag category, TreeIter parentIter)
+		{ //FIXME, || category.Children.IsEmpty()
 			if (category.Children == null)
-				tagStore.SetChildren (category);
+				TagStore.GetChildren (category);
 
-			IList<Tag> tags = category.Children;
+			var tags = category.Children ?? Enumerable.Empty<Tag> ();
 
-			foreach (Tag t in tags) {
-				TreeIter iter = (Model as TreeStore).AppendValues (parent_iter, t.Id.ToString (), t.Name);
+		foreach (Tag t in tags) {
+				var iter = TagTreeStore.AppendValues (parentIter, t.Id.ToString (), t.Name);
 				if (t.IsCategory)
 					LoadCategory (t, iter);
 			}
@@ -173,7 +172,7 @@ namespace FSpot
 					var value = new GLib.Value ();
 					Model.GetIter (out var iter, path);
 					Model.GetValue (iter, IdColumn, ref value);
-					tags.Add (tagStore.Get (Guid.Parse ((string)value)));
+					tags.Add (TagStore.Get (Guid.Parse ((string)value)));
 				}
 				return tags;
 			}
@@ -192,14 +191,15 @@ namespace FSpot
 
 		public void Update ()
 		{
-			(Model as TreeStore).Clear ();
+			TagTreeStore.Clear ();
 
 			// GRRR We have to special case the root because I can't pass null for a
 			// Gtk.TreeIter (since it's a struct, and not a class).
 			// FIXME: This should be fixed in GTK#...  It's gross.
 
-			foreach (Tag t in tagStore.RootCategory.Children) {
-				TreeIter iter = (Model as TreeStore).AppendValues (t.Id, t.Name);
+			var rootCategoryChildren = TagStore.RootCategory.Children;
+			foreach (Tag t in rootCategoryChildren) {
+				TreeIter iter = TagTreeStore.AppendValues (t.Id.ToString (), t.Name);
 				if (t.IsCategory)
 					LoadCategory (t, iter);
 			}
@@ -222,23 +222,26 @@ namespace FSpot
 		{
 			var value = new GLib.Value () ;
 			Model.GetValue (iter, IdColumn, ref value);
-			Tag tag = tagStore.Get (Guid.Parse((string)value));
+			Tag tag = TagStore.Get (Guid.Parse((string)value));
 
 			if (tag == null)
 				return;
 
 			SetBackground (renderer, tag);
 
-			if (tag.TagIcon.SizedIcon != null) {
-				if (FSpot.ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
+			var icon = EmptyPixbuf;
+			if (tag.TagIcon?.SizedIcon != null) {
+				if (ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screenProfile)) {
 					//FIXME, we're leaking a pixbuf here
-					using Gdk.Pixbuf temp = tag.TagIcon.SizedIcon.Copy ();
-					FSpot.ColorManagement.ApplyProfile (temp, screen_profile);
-					(renderer as CellRendererPixbuf).Pixbuf = temp;
-				} else
-					(renderer as CellRendererPixbuf).Pixbuf = tag.TagIcon.SizedIcon;
-			} else
-				(renderer as CellRendererPixbuf).Pixbuf = EmptyPixbuf;
+					using Pixbuf temp = tag.TagIcon.SizedIcon.Copy ();
+					FSpot.ColorManagement.ApplyProfile (temp, screenProfile);
+					icon = temp;
+				} else {
+					icon = tag.TagIcon.SizedIcon;
+				}
+			}
+
+			(renderer as CellRendererPixbuf).Pixbuf = icon;
 		}
 
 		void NameDataFunc (TreeViewColumn column, CellRenderer renderer, TreeModel model, TreeIter iter)
@@ -249,7 +252,7 @@ namespace FSpot
 
 			var value = new GLib.Value ();
 			Model.GetValue (iter, IdColumn, ref value);
-			Tag tag = tagStore.Get (Guid.Parse ((string)value));
+			Tag tag = TagStore.Get (Guid.Parse ((string)value));
 			if (tag == null)
 				return;
 
@@ -260,10 +263,8 @@ namespace FSpot
 
 		bool TreeIterForTag (Tag tag, out TreeIter iter)
 		{
-			TreeIter root = TreeIter.Zero;
 			iter = TreeIter.Zero;
-
-			bool valid = Model.GetIterFirst (out root);
+			bool valid = Model.GetIterFirst (out var root);
 
 			while (valid) {
 				if (TreeIterForTagRecurse (tag, root, out iter))
@@ -285,7 +286,7 @@ namespace FSpot
 				valid = Model.IterNext (ref iter);
 			}
 
-			GLib.Value value = new GLib.Value ();
+			var value = new GLib.Value ();
 			Model.GetValue (parent, IdColumn, ref value);
 			iter = parent;
 
@@ -294,19 +295,20 @@ namespace FSpot
 
 		// Copy a branch of the tree to a new parent
 		// (note, this doesn't work generically as it only copies the first value of each node)
-		void CopyBranch (TreeIter src, TreeIter dest, bool is_root, bool is_parent)
+		void CopyBranch (TreeIter src, TreeIter dest, bool isRoot, bool isParent)
 		{
 			TreeIter copy;
-			GLib.Value value = new GLib.Value ();
-			var store = Model as TreeStore;
+			var store = TagTreeStore;
 
+			var value = new GLib.Value ();
 			store.GetValue (src, IdColumn, ref value);
-			Tag tag = tagStore.Get (Guid.Parse((string)value));
-			if (is_parent) {
+			Tag tag = TagStore.Get (Guid.Parse((string)value));
+
+			if (isParent) {
 				// we need to figure out where to insert it in the correct order
-				copy = InsertInOrder (dest, is_root, tag);
+				copy = InsertInOrder (dest, isRoot, tag);
 			} else {
-				copy = store.AppendValues (dest, (uint)value, tag.Name);
+				copy = store.AppendValues (dest, tag.Id.ToString (), tag.Name);
 			}
 
 			var valid = Model.IterChildren (out var iter, src);
@@ -318,43 +320,43 @@ namespace FSpot
 		}
 
 		// insert tag into the correct place in the tree, with parent. return the new TagIter in iter.
-		TreeIter InsertInOrder (TreeIter parent, bool is_root, Tag tag)
+		TreeIter InsertInOrder (TreeIter parent, bool isRoot, Tag tag)
 		{
-			var store = Model as TreeStore;
+			var store = TagTreeStore;
 			TreeIter iter;
 			bool valid;
 
-			if (is_root)
+			if (isRoot)
 				valid = store.GetIterFirst (out iter);
 			else
 				valid = store.IterChildren (out iter, parent);
 
+			var value = new GLib.Value ();
 			while (valid) {
 				//I have no desire to figure out a more performant sort over this...
-				GLib.Value value = new GLib.Value ();
 				store.GetValue (iter, IdColumn, ref value);
-				var compare = tagStore.Get (Guid.Parse((string)value));
+				var compare = TagStore.Get (Guid.Parse((string)value));
 
 				if (compare.CompareTo (tag) > 0) {
 					iter = store.InsertNodeBefore (iter);
-					store.SetValue (iter, IdColumn, tag.Id);
+					store.SetValue (iter, IdColumn, tag.Id.ToString ());
 					store.SetValue (iter, NameColumn, tag.Name);
 
-					if (!is_root)
+					if (!isRoot)
 						ExpandRow (Model.GetPath (parent), false);
 					return iter;
 				}
 				valid = store.IterNext (ref iter);
 			}
 
-			if (is_root)
+			if (isRoot)
 				iter = store.AppendNode ();
 			else {
 				iter = store.AppendNode (parent);
 				ExpandRow (Model.GetPath (parent), false);
 			}
 
-			store.SetValue (iter, IdColumn, tag.Id);
+			store.SetValue (iter, IdColumn, tag.Id.ToString ());
 			store.SetValue (iter, NameColumn, tag.Name);
 			return iter;
 		}
@@ -363,7 +365,7 @@ namespace FSpot
 		{
 			foreach (Tag tag in args.Items) {
 				if (TreeIterForTag (tag, out var iter))
-					(Model as TreeStore).Remove (ref iter);
+					TagTreeStore.Remove (ref iter);
 			}
 		}
 
@@ -372,30 +374,30 @@ namespace FSpot
 			TreeIter iter = TreeIter.Zero;
 
 			foreach (Tag tag in args.Items) {
-				if (tag.Category != tagStore.RootCategory)
+				if (tag.Category != TagStore.RootCategory)
 					TreeIterForTag (tag.Category, out iter);
 
-				InsertInOrder (iter, tag.Category.Name == tagStore.RootCategory.Name, tag);
+				InsertInOrder (iter, tag.Category.Name == TagStore.RootCategory.Name, tag);
 			}
 		}
 
 		void HandleTagsChanged (object sender, DbItemEventArgs<Tag> args)
 		{
-			var store = Model as TreeStore;
+			var store = TagTreeStore;
 
 			foreach (Tag tag in args.Items) {
 				TreeIterForTag (tag, out var iter);
 
-				bool category_valid = TreeIterForTag (tag.Category, out var category_iter);
-				bool parent_valid = Model.IterParent (out var parent_iter, iter);
+				bool categoryValid = TreeIterForTag (tag.Category, out var categoryIter);
+				bool parentValid = Model.IterParent (out var parentIter, iter);
 
-				if ((category_valid && (category_iter.Equals (parent_iter))) || (!category_valid && !parent_valid)) {
+				if ((categoryValid && (categoryIter.Equals (parentIter))) || (!categoryValid && !parentValid)) {
 					// if we haven't been reparented
 					TreePath path = store.GetPath (iter);
 					store.EmitRowChanged (path, iter);
 				} else {
 					// It is a bit tougher. We need to do an annoying clone of structs...
-					CopyBranch (iter, category_iter, !category_valid, true);
+					CopyBranch (iter, categoryIter, !categoryValid, true);
 					store.Remove (ref iter);
 				}
 			}
@@ -403,7 +405,7 @@ namespace FSpot
 
 		void ExpandDefaults ()
 		{
-			int[] tags = Preferences.Get<int[]> (Preferences.ExpandedTags);
+			var tags = Preferences.Get<string[]> (Preferences.ExpandedTags);
 			if (tags == null) {
 				ExpandAll ();
 				return;
@@ -413,11 +415,11 @@ namespace FSpot
 			if (iters == null || iters.Length == 0 || tags.Length == 0)
 				return;
 
+			var v = new GLib.Value ();
 			foreach (TreeIter iter in iters) {
-				GLib.Value v = new GLib.Value ();
 				Model.GetValue (iter, IdColumn, ref v);
-				int tag_id = (int)(uint)v;
-				if (Array.IndexOf (tags, tag_id) > -1) {
+				var tagId = Guid.Parse((string)v);
+				if (Array.IndexOf (tags, tagId) > -1) {
 					ExpandRow (Model.GetPath (iter), false);
 				}
 			}
@@ -431,9 +433,9 @@ namespace FSpot
 		/// </returns>
 		TreeIter[] ModelIters ()
 		{
-			if (Model.GetIterFirst (out var root)) {
+			if (Model.GetIterFirst (out var root))
 				return ModelIters (root, true).ToArray ();
-			}
+
 			return null;
 		}
 
@@ -441,40 +443,39 @@ namespace FSpot
 		// descended from it
 		List<TreeIter> ModelIters (TreeIter root, bool first)
 		{
-			var model_iters = new List<TreeIter> (Model.IterNChildren ());
-			model_iters.Add (root);
+			var modelIters = new List<TreeIter> (Model.IterNChildren ()) { root };
 
 			// Append any children
 			if (Model.IterChildren (out var child, root))
-				model_iters.AddRange (ModelIters (child, true));
+				modelIters.AddRange (ModelIters (child, true));
 
 			// Append any siblings and their children
 			if (first) {
 				while (Model.IterNext (ref root)) {
-					model_iters.AddRange (ModelIters (root, false));
+					modelIters.AddRange (ModelIters (root, false));
 				}
 			}
 
-			return model_iters;
+			return modelIters;
 		}
 
 		public void SaveExpandDefaults ()
 		{
-			List<int> expanded_tags = new List<int> ();
+			var expandedTags = new List<string> ();
 
 			TreeIter[] iters = ModelIters ();
 			if (iters == null)
 				return;
 
+			var v = new GLib.Value ();
 			foreach (TreeIter iter in iters) {
 				if (GetRowExpanded (Model.GetPath (iter))) {
-					GLib.Value v = new GLib.Value ();
 					Model.GetValue (iter, IdColumn, ref v);
-					expanded_tags.Add ((int)(uint)v);
+					expandedTags.Add (v.ToString ());
 				}
 			}
 
-			Preferences.Set (Preferences.ExpandedTags, expanded_tags.ToArray ());
+			Preferences.Set (Preferences.ExpandedTags, expandedTags.ToArray ());
 		}
 
 		public void EditSelectedTagName ()
@@ -484,10 +485,10 @@ namespace FSpot
 				return;
 
 			//SetCursor (rows[0], NameColumn, true);
-			text_render.Editable = true;
-			text_render.Edited += HandleTagNameEdited;
-			SetCursor (rows[0], complete_column, true);
-			text_render.Editable = false;
+			textRender.Editable = true;
+			textRender.Edited += HandleTagNameEdited;
+			SetCursor (rows[0], completeColumn, true);
+			textRender.Editable = false;
 		}
 
 		public void HandleTagNameEdited (object sender, EditedArgs args)
@@ -498,10 +499,10 @@ namespace FSpot
 				return;
 
 			// FIXME, verify this
-			GLib.Value value = new GLib.Value ();
+			var value = new GLib.Value ();
 			Model.GetValue (iter, IdColumn, ref value);
-			var tag_id = Guid.Parse ((string)value);
-			Tag tag = tagStore.Get (tag_id);
+			var tagId = Guid.Parse ((string)value);
+			Tag tag = TagStore.Get (tagId);
 
 			// Ignore if it hasn't changed
 			if (tag.Name == args.NewText)
@@ -509,10 +510,9 @@ namespace FSpot
 
 			// Check that the tag doesn't already exist
 			if (string.Compare (args.NewText, tag.Name, true) != 0 &&
-				tagStore.GetTagByName (args.NewText) != null) {
+				TagStore.GetTagByName (args.NewText) != null) {
 				using var md = new HigMessageDialog (App.Instance.Organizer.Window,
-					DialogFlags.DestroyWithParent,
-					MessageType.Warning, ButtonsType.Ok,
+					DialogFlags.DestroyWithParent, MessageType.Warning, ButtonsType.Ok,
 					Catalog.GetString ("Error renaming tag"),
 					Catalog.GetString ("This name is already in use"));
 
@@ -523,9 +523,9 @@ namespace FSpot
 			}
 
 			tag.Name = args.NewText;
-			tagStore.Commit (tag, true);
+			TagStore.Commit (tag, true);
 
-			text_render.Edited -= HandleTagNameEdited;
+			textRender.Edited -= HandleTagNameEdited;
 
 			args.RetVal = true;
 		}
@@ -534,40 +534,37 @@ namespace FSpot
 		{
 			var tags = TagHighlight.ToArray ();
 			int len = tags.Length;
-			int size = 32;
+			const int size = 32;
 			int csize = size / 2 + len * size / 2 + 2;
 
-			Pixbuf container = new Pixbuf (Gdk.Colorspace.Rgb, true, 8, csize, csize);
+			using var container = new Pixbuf (Gdk.Colorspace.Rgb, true, 8, csize, csize);
 			container.Fill (0x00000000);
 
-			bool use_icon = false; ;
+			bool useIcon = false;
 			while (len-- > 0) {
 				Pixbuf thumbnail = tags[len].TagIcon.Icon;
 
-				if (thumbnail != null) {
-					Pixbuf small = thumbnail.ScaleToMaxSize (size, size);
+				if (thumbnail == null)
+					continue;
 
-					int x = len * (size / 2) + (size - small.Width) / 2;
-					int y = len * (size / 2) + (size - small.Height) / 2;
+				using Pixbuf small = thumbnail.ScaleToMaxSize (size, size);
 
-					small.Composite (container, x, y, small.Width, small.Height, x, y, 1.0, 1.0, Gdk.InterpType.Nearest, 0xff);
-					small.Dispose ();
+				int x = len * (size / 2) + (size - small.Width) / 2;
+				int y = len * (size / 2) + (size - small.Height) / 2;
 
-					use_icon = true;
-				}
+				small.Composite (container, x, y, small.Width, small.Height, x, y, 1.0, 1.0, Gdk.InterpType.Nearest, 0xff);
+
+				useIcon = true;
 			}
 
-			if (use_icon)
+			if (useIcon)
 				Gtk.Drag.SetIconPixbuf (args.Context, container, 0, 0);
-
-			container.Dispose ();
 		}
 
 		void HandleDragDataGet (object sender, DragDataGetArgs args)
 		{
-			if (args.Info == DragDropTargets.TagListEntry.Info) {
+			if (args.Info == DragDropTargets.TagListEntry.Info)
 				args.SelectionData.SetTagsData (TagHighlight, args.Context.Targets[0]);
-			}
 		}
 
 		void HandleDragDrop (object sender, DragDropArgs args)
@@ -577,7 +574,7 @@ namespace FSpot
 
 		public void HandleDragMotion (object o, DragMotionArgs args)
 		{
-			TreeViewDropPosition position = TreeViewDropPosition.IntoOrAfter;
+			var position = TreeViewDropPosition.IntoOrAfter;
 			GetPathAtPos (args.X, args.Y, out var path);
 
 			if (path == null)
@@ -589,16 +586,16 @@ namespace FSpot
 			// Scroll if within 20 pixels of the top or bottom of the tag list
 			if (args.Y < 20)
 				Vadjustment.Value -= 30;
-			else if (((o as Gtk.Widget).Allocation.Height - args.Y) < 20)
+			else if (((o as Widget).Allocation.Height - args.Y) < 20)
 				Vadjustment.Value += 30;
 		}
 
 		public void HandleDragDataReceived (object o, DragDataReceivedArgs args)
 		{
-			if (!GetDestRowAtPos ((int)args.X, (int)args.Y, out var path, out var position))
+			if (!GetDestRowAtPos (args.X, args.Y, out var path, out var position))
 				return;
 
-			Tag tag = path == null ? null : TagByPath (path);
+			Tag tag = (path == null) ? null : TagByPath (path);
 			if (tag == null)
 				return;
 
@@ -627,8 +624,8 @@ namespace FSpot
 				UriList list = args.SelectionData.GetUriListData ();
 
 				var photos = new List<Photo> ();
-				foreach (var photo_uri in list) {
-					Photo photo = App.Instance.Database.Photos.GetByUri (photo_uri);
+				foreach (var photoUri in list) {
+					Photo photo = App.Instance.Database.Photos.GetByUri (photoUri);
 
 					// FIXME - at this point we should import the photo, and then continue
 					if (photo == null)
@@ -658,8 +655,8 @@ namespace FSpot
 					return;
 				}
 
-				int moved_count = 0;
-				var highlighted_tags = TagHighlight;
+				int movedCount = 0;
+				var highlightedTags = TagHighlight;
 				foreach (Tag child in TagHighlight) {
 					// FIXME with this reparenting via dnd, you cannot move a tag to root.
 					if (child != parent && child.Category != parent && !child.IsAncestorOf (parent)) {
@@ -667,14 +664,14 @@ namespace FSpot
 
 						// Saving changes will automatically cause the TreeView to be updated
 						App.Instance.Database.Tags.Commit (child);
-						moved_count++;
+						movedCount++;
 					}
 				}
 
 				// Reselect the same tags
-				TagHighlight = highlighted_tags;
+				TagHighlight = highlightedTags;
 
-				args.RetVal = moved_count > 0;
+				args.RetVal = movedCount > 0;
 			}
 		}
 

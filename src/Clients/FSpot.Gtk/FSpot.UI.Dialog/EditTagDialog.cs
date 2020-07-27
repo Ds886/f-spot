@@ -36,14 +36,16 @@ namespace FSpot.UI.Dialog
 			tag = t;
 			TransientFor = parent_window;
 
-			orig_name = last_valid_name = t.Name;
+			originalName = lastValidName = t.Name;
 			tag_name_entry.Text = t.Name;
 
+			/* FIXME, Tag icon support
 			icon_image.Pixbuf = t.TagIcon.Icon;
-			if (icon_image.Pixbuf != null && FSpot.ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
+			if (icon_image.Pixbuf != null && ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
 				icon_image.Pixbuf = icon_image.Pixbuf.Copy ();
-				FSpot.ColorManagement.ApplyProfile (icon_image.Pixbuf, screen_profile);
+				ColorManagement.ApplyProfile (icon_image.Pixbuf, screen_profile);
 			}
+			*/
 			PopulateCategoryOptionMenu (t);
 
 			tag_name_entry.GrabFocus ();
@@ -51,11 +53,11 @@ namespace FSpot.UI.Dialog
 			category_option_menu.Changed += HandleTagNameEntryChanged;
 		}
 
-		string orig_name;
-		string last_valid_name;
+		readonly string originalName;
+		string lastValidName;
 
 		public string TagName {
-			get { return last_valid_name; }
+			get { return lastValidName; }
 		}
 
 		public Tag TagCategory {
@@ -72,13 +74,13 @@ namespace FSpot.UI.Dialog
 				ok_button.Sensitive = false;
 				already_in_use_label.Markup = string.Empty;
 			} else if (TagNameExistsInCategory (name, db.Tags.RootCategory)
-				   && string.Compare (name, orig_name, StringComparison.OrdinalIgnoreCase) != 0) {
+				   && string.Compare (name, originalName, StringComparison.OrdinalIgnoreCase) != 0) {
 				ok_button.Sensitive = false;
 				already_in_use_label.Markup = "<small>" + Catalog.GetString ("This name is already in use") + "</small>";
 			} else {
 				ok_button.Sensitive = true;
 				already_in_use_label.Markup = string.Empty;
-				last_valid_name = tag_name_entry.Text;
+				lastValidName = tag_name_entry.Text;
 			}
 		}
 
@@ -120,9 +122,9 @@ namespace FSpot.UI.Dialog
 			else if (response == (ResponseType)1)
 				tag.Icon = null;
 
-			if (tag.Icon != null && FSpot.ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
+			if (tag.Icon != null && ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
 				icon_image.Pixbuf = tag.TagIcon.Icon.Copy ();
-				FSpot.ColorManagement.ApplyProfile (icon_image.Pixbuf, screen_profile);
+				ColorManagement.ApplyProfile (icon_image.Pixbuf, screen_profile);
 			} else
 				icon_image.Pixbuf = tag.TagIcon.Icon;
 
@@ -140,15 +142,15 @@ namespace FSpot.UI.Dialog
 
 			category_option_menu.Clear ();
 
-			CellRendererPixbuf cell2 = new CellRendererPixbuf ();
+			using CellRendererPixbuf cell2 = new CellRendererPixbuf ();
 			category_option_menu.PackStart (cell2, false);
 			category_option_menu.AddAttribute (cell2, "pixbuf", 0);
 
-			CellRendererText cell = new CellRendererText ();
+			using CellRendererText cell = new CellRendererText ();
 			category_option_menu.PackStart (cell, true);
 			category_option_menu.AddAttribute (cell, "text", 1);
 
-			ListStore store = new ListStore (typeof (Gdk.Pixbuf), typeof (string));
+			var store = new ListStore (typeof (Gdk.Pixbuf), typeof (string));
 			category_option_menu.Model = store;
 
 			foreach (var category in categories) {

@@ -4,6 +4,7 @@
 
 using System;
 
+using FSpot.Database;
 using FSpot.Models;
 using FSpot.Settings;
 using FSpot.Utils;
@@ -26,8 +27,7 @@ namespace FSpot.Core
 			get {
 				if (icon == null && tag.ThemeIconName != null) {
 					cached_icon_size = IconSize.Hidden;
-					icon = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, tag.ThemeIconName, 48,
-						(Gtk.IconLookupFlags)0);
+					icon = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, tag.ThemeIconName, 48, (Gtk.IconLookupFlags)0);
 				}
 
 				return icon;
@@ -65,7 +65,7 @@ namespace FSpot.Core
 						return null;
 					}
 				}
-				if (tag.Icon == null)
+				if (Icon == null)
 					return null;
 
 				if (Math.Max (icon.Width, icon.Height) >= (int)TagIconSize) { //Don't upscale
@@ -76,6 +76,36 @@ namespace FSpot.Core
 				}
 				return icon;
 			}
+		}
+
+		public string GetIconString ()
+		{
+			if (tag.ThemeIconName != null)
+				return TagStore.StockIconDbPrefix + tag.Icon;
+
+			if (tag.Icon == null) {
+				if (tag.IconWasCleared)
+					return string.Empty;
+				return null;
+			}
+
+			byte[] data = GdkUtils.Serialize (tag.TagIcon.Icon);
+			return Convert.ToBase64String (data);
+		}
+
+		public void SetIconFromString ()
+		{
+			var iconString = tag.Icon;
+
+			if (string.IsNullOrWhiteSpace (iconString)) {
+				tag.TagIcon.Icon = null;
+				// IconWasCleared automatically set already, override
+				// it in this case since it was NULL in the db.
+				tag.IconWasCleared = false;
+			} else if (iconString.StartsWith (TagStore.StockIconDbPrefix, StringComparison.Ordinal))
+				tag.ThemeIconName = iconString.Substring (TagStore.StockIconDbPrefix.Length);
+			else
+				tag.TagIcon.Icon = GdkUtils.Deserialize (Convert.FromBase64String (iconString));
 		}
 
 		public void Dispose ()

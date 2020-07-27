@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Gtk;
 using Gdk;
 
@@ -23,12 +24,6 @@ namespace FSpot.UI.Dialog
 {
 	public class CreateTagDialog : BuilderDialog
 	{
-		public enum TagType
-		{
-			Tag,
-			Category
-		}
-
 #pragma warning disable 649
 		[GtkBeans.Builder.Object] Button create_button;
 		[GtkBeans.Builder.Object] Entry tag_name_entry;
@@ -77,17 +72,16 @@ namespace FSpot.UI.Dialog
 			category_option_menu.Sensitive = true;
 
 			category_option_menu.Model = categoryStore;
-			var icon_renderer = new CellRendererPixbuf { Width = (int)Tag.TagIconSize };
-			category_option_menu.PackStart (icon_renderer, true);
+			using var iconRenderer = new CellRendererPixbuf { Width = (int)Tag.TagIconSize };
+			category_option_menu.PackStart (iconRenderer, true);
 
-			var text_renderer = new CellRendererText {
-				Alignment = Pango.Alignment.Left,
-				Width = 150
+			using var textRenderer = new CellRendererText {
+				Alignment = Pango.Alignment.Left, Width = 150
 			};
 
-			category_option_menu.PackStart (text_renderer, true);
-			category_option_menu.AddAttribute (icon_renderer, "pixbuf", 0);
-			category_option_menu.AddAttribute (text_renderer, "text", 1);
+			category_option_menu.PackStart (textRenderer, true);
+			category_option_menu.AddAttribute (iconRenderer, "pixbuf", 0);
+			category_option_menu.AddAttribute (textRenderer, "text", 1);
 			category_option_menu.ShowAll ();
 		}
 
@@ -146,16 +140,16 @@ namespace FSpot.UI.Dialog
 			}
 		}
 
-		public Tag Execute (TagType type, IEnumerable<Tag> selection)
+		public Tag Execute (IEnumerable<Tag> selection)
 		{
-			Tag default_category = null;
+			Tag defaultCategory;
 			if (selection.Any ()) {
 				if (selection.First ().IsCategory)
-					default_category = selection.First ();
+					defaultCategory = selection.First ();
 				else
-					default_category = selection.First ().Category;
+					defaultCategory = selection.First ().Category;
 			} else {
-				default_category = tag_store.RootCategory;
+				defaultCategory = tag_store.RootCategory;
 			}
 
 			DefaultResponse = ResponseType.Ok;
@@ -165,20 +159,20 @@ namespace FSpot.UI.Dialog
 			auto_icon_checkbutton.Active = Preferences.Get<bool> (Preferences.TagIconAutomatic);
 
 			PopulateCategoryOptionMenu ();
-			Category = default_category;
+			Category = defaultCategory;
 			Update ();
 			tag_name_entry.GrabFocus ();
 
-			ResponseType response = (ResponseType)Run ();
+			var response = (ResponseType)Run ();
 
-			Tag new_tag = null;
+			Tag newTag = null;
 			if (response == ResponseType.Ok) {
 				bool autoicon = auto_icon_checkbutton.Active;
 				Preferences.Set (Preferences.TagIconAutomatic, autoicon);
 				try {
-					var parent_category = Category;
+					var parentCategory = Category;
 
-					new_tag = tag_store.CreateTag (parent_category, tag_name_entry.Text, autoicon, type == TagType.Category);
+					newTag = tag_store.CreateTag (parentCategory, tag_name_entry.Text, autoicon, true);
 				} catch (Exception ex) {
 					// FIXME error dialog.
 					Log.Exception (ex);
@@ -186,7 +180,7 @@ namespace FSpot.UI.Dialog
 			}
 
 			Destroy ();
-			return new_tag;
+			return newTag;
 		}
 	}
 }

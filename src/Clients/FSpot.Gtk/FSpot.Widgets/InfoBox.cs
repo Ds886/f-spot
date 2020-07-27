@@ -677,12 +677,12 @@ namespace FSpot.Widgets
 	{
 		string PrefKeyForContext (ViewContext context, string item)
 		{
-			return $"{Preferences.UIKey}/{item}_visible/{context}";
+			return $"{Preferences.UIKey}{item}Visible/{context}";
 		}
 
 		string PrefKeyForContext (ViewContext context, string parent, string item)
 		{
-			return $"{Preferences.UIKey}/{parent}_visible/{item}/{context}";
+			return $"{Preferences.UIKey}{parent}Visible/{item}/{context}";
 		}
 
 		bool VisibilityForContext (ViewContext context, string item, bool default_value)
@@ -715,12 +715,12 @@ namespace FSpot.Widgets
 
 		public override bool InfoBoxVisible (ViewContext context)
 		{
-			return VisibilityForContext (context, "infobox", true);
+			return VisibilityForContext (context, "Infobox", true);
 		}
 
 		public override bool HistogramVisible (ViewContext context)
 		{
-			return VisibilityForContext (context, "histogram", true);
+			return VisibilityForContext (context, "Histogram", true);
 		}
 
 		public override bool InfoEntryVisible (ViewContext context, InfoBox.InfoEntry entry)
@@ -728,17 +728,17 @@ namespace FSpot.Widgets
 			if (entry.AlwaysVisible)
 				return true;
 
-			return VisibilityForContext (context, "infobox", entry.Id, true);
+			return VisibilityForContext (context, "Infobox", entry.Id, true);
 		}
 
 		public override void SetInfoBoxVisible (ViewContext context, bool visible)
 		{
-			SetVisibilityForContext (context, "infobox", visible);
+			SetVisibilityForContext (context, "Infobox", visible);
 		}
 
 		public override void SetHistogramVisible (ViewContext context, bool visible)
 		{
-			SetVisibilityForContext (context, "histogram", visible);
+			SetVisibilityForContext (context, "Histogram", visible);
 		}
 
 		public override void SetInfoEntryVisible (ViewContext context, InfoBox.InfoEntry entry, bool visible)
@@ -747,7 +747,7 @@ namespace FSpot.Widgets
 			if (entry.AlwaysVisible)
 				throw new Exception ("entry visibility cannot be set");
 
-			SetVisibilityForContext (context, "infobox", entry.Id, visible);
+			SetVisibilityForContext (context, "Infobox", entry.Id, visible);
 		}
 	}
 }

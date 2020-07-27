@@ -23,6 +23,7 @@ namespace FSpot.Models
 		public long SortPriority { get; set; }
 		public string Icon { get; set; }
 
+
 		[NotMapped]
 		List<Tag> children = new List<Tag> ();
 
@@ -73,17 +74,16 @@ namespace FSpot.Models
 		{
 			Popularity = 0;
 			IconWasCleared = false;
+			TagIcon = new TagIcon (this);
+			TagIcon.SetIconFromString ();
 		}
 
-		public Tag (Tag category)
+		public Tag (Tag category) : this ()
 		{
 			Category = category;
-			Popularity = 0;
-			IconWasCleared = false;
-			TagIcon = new TagIcon (this);
 		}
 
-		public Tag (Tag category, Guid id, string name)
+		public Tag (Tag category, Guid id, string name) : this ()
 		{
 			Category = category;
 			Id = id;

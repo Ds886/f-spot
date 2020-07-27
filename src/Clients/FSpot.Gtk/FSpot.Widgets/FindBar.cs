@@ -30,28 +30,22 @@ namespace FSpot.Widgets
 {
 	public class FindBar : HighlightedBox
 	{
-		Entry entry;
 		string last_entry_text = string.Empty;
 		int open_parens;
 		int close_parens;
 		PhotoQuery query;
-		Term root_term;
 		HBox box;
 		readonly object lockObject = new object ();
 
 		public bool Completing {
 			get {
-				return (entry.Completion as LogicEntryCompletion).Completing;
+				return (Entry.Completion as LogicEntryCompletion).Completing;
 			}
 		}
 
-		public Entry Entry {
-			get { return entry; }
-		}
+		public Entry Entry { get; }
 
-		public Term RootTerm {
-			get { return root_term; }
-		}
+		public Term RootTerm { get; private set; }
 
 		public FindBar (PhotoQuery query, TreeModel model) : base (new HBox ())
 		{
@@ -63,21 +57,19 @@ namespace FSpot.Widgets
 
 			box.PackStart (new Label (Catalog.GetString ("Find:")), false, false, 0);
 
-			entry = new Entry ();
-			entry.Completion = new LogicEntryCompletion (entry, model);
+			Entry = new Entry ();
+			Entry.Completion = new LogicEntryCompletion (Entry, model);
 
-			entry.TextInserted += HandleEntryTextInserted;
-			entry.TextDeleted += HandleEntryTextDeleted;
-			entry.KeyPressEvent += HandleEntryKeyPress;
+			Entry.TextInserted += HandleEntryTextInserted;
+			Entry.TextDeleted += HandleEntryTextDeleted;
+			Entry.KeyPressEvent += HandleEntryKeyPress;
 
-			box.PackStart (entry, true, true, 0);
+			box.PackStart (Entry, true, true, 0);
 
-			using var clear_button = new Button {
-				new Image ("gtk-close", IconSize.Button)
-			};
-			clear_button.Clicked += HandleCloseButtonClicked;
-			clear_button.Relief = ReliefStyle.None;
-			box.PackStart (clear_button, false, false, 0);
+			using var clearButton = new Button { new Image ("gtk-close", IconSize.Button) };
+			clearButton.Clicked += HandleCloseButtonClicked;
+			clearButton.Relief = ReliefStyle.None;
+			box.PackStart (clearButton, false, false, 0);
 		}
 
 		void HandleCloseButtonClicked (object sender, EventArgs args)
@@ -99,17 +91,17 @@ namespace FSpot.Widgets
 					close_parens++;
 			}
 
-			int pos = entry.Position + 1;
+			int pos = Entry.Position + 1;
 			int closeParensNeeded = open_parens - close_parens;
 			for (int i = 0; i < closeParensNeeded; i++) {
-				entry.TextInserted -= HandleEntryTextInserted;
-				entry.InsertText (")", ref pos);
+				Entry.TextInserted -= HandleEntryTextInserted;
+				Entry.InsertText (")", ref pos);
 				close_parens++;
-				entry.TextInserted += HandleEntryTextInserted;
+				Entry.TextInserted += HandleEntryTextInserted;
 				pos++;
 			}
 			//Log.DebugFormat ("done w/ insert, {0}, ( = {1}  ) = {2}", args.Text, open_parens, close_parens);
-			last_entry_text = entry.Text;
+			last_entry_text = Entry.Text;
 
 			QueueUpdate ();
 		}
@@ -127,7 +119,7 @@ namespace FSpot.Widgets
 					close_parens--;
 			}
 
-			last_entry_text = entry.Text;
+			last_entry_text = Entry.Text;
 
 			QueueUpdate ();
 		}
@@ -144,17 +136,17 @@ namespace FSpot.Widgets
 
 			case (Gdk.Key.Tab):
 				// If we are at the end of the entry box, let the normal Tab handler do its job
-				if (entry.Position == entry.Text.Length) {
+				if (Entry.Position == Entry.Text.Length) {
 					args.RetVal = false;
 					return;
 				}
 
 				// Go until the current character is an open paren
-				while (entry.Position < entry.Text.Length && entry.Text[entry.Position] != '(')
-					entry.Position++;
+				while (Entry.Position < Entry.Text.Length && Entry.Text[Entry.Position] != '(')
+					Entry.Position++;
 
 				// Put the cursor right after the open paren
-				entry.Position++;
+				Entry.Position++;
 
 				args.RetVal = true;
 				break;
@@ -167,7 +159,7 @@ namespace FSpot.Widgets
 
 		void Clear ()
 		{
-			entry.Text = string.Empty;
+			Entry.Text = string.Empty;
 			Hide ();
 		}
 
@@ -278,7 +270,7 @@ namespace FSpot.Widgets
 				}
 
 				if (RootTerm == null)
-					root_term = parent;
+					RootTerm = parent;
 
 				return true;
 			} else {
@@ -286,7 +278,7 @@ namespace FSpot.Widgets
 				if (!string.IsNullOrEmpty (op)) {
 					us = Term.TermFromOperator (op, parent, null);
 					if (RootTerm == null)
-						root_term = us;
+						RootTerm = us;
 				}
 
 				foreach (Capture capture in match.Groups["Term"].Captures) {
@@ -327,7 +319,7 @@ namespace FSpot.Widgets
 
 				if (negated && us != null) {
 					if (us == RootTerm)
-						root_term = us.Invert (false);
+						RootTerm = us.Invert (false);
 					else
 						us.Invert (false);
 				}
@@ -377,9 +369,9 @@ namespace FSpot.Widgets
 		void Update ()
 		{
 			// Clear the last root term
-			root_term = null;
+			RootTerm = null;
 
-			if (ParensValid () && ConstructQuery (null, 0, entry.Text)) {
+			if (ParensValid () && ConstructQuery (null, 0, Entry.Text)) {
 				if (RootTerm != null) {
 					//Log.DebugFormat("rootTerm = {0}", RootTerm);
 					if (!(RootTerm is AndTerm)) {
@@ -387,7 +379,7 @@ namespace FSpot.Widgets
 						// ensure we handle the Hidden tag properly
 						var root_parent = new AndTerm (null, null);
 						RootTerm.Parent = root_parent;
-						root_term = root_parent;
+						RootTerm = root_parent;
 					}
 
 					//Log.DebugFormat("rootTerm = {0}", RootTerm);
@@ -396,7 +388,7 @@ namespace FSpot.Widgets
 						// ensure we handle the Hidden tag properly
 						var root_parent = new AndTerm (null, null);
 						RootTerm.Parent = root_parent;
-						root_term = root_parent;
+						RootTerm = root_parent;
 					}
 					//Log.DebugFormat ("condition = {0}", RootTerm.SqlCondition ());
 					query.TagTerm = new ConditionWrapper (RootTerm.SqlCondition ());
@@ -409,9 +401,9 @@ namespace FSpot.Widgets
 
 		bool ParensValid ()
 		{
-			for (int i = 0; i < entry.Text.Length; i++) {
-				if (entry.Text[i] == '(' || entry.Text[i] == ')') {
-					int pair_pos = ParenPairPosition (entry.Text, i);
+			for (int i = 0; i < Entry.Text.Length; i++) {
+				if (Entry.Text[i] == '(' || Entry.Text[i] == ')') {
+					int pair_pos = ParenPairPosition (Entry.Text, i);
 
 					if (pair_pos == -1)
 						return false;
