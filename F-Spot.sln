@@ -102,7 +102,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Console", "src\Clients\FSpot.Console\FSpot.Console.csproj", "{71F95ED2-844B-4727-8EE5-D80901756111}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSpot.Cms", "src\Core\FSpot.Cms\FSpot.Cms.csproj", "{405E666B-3D56-4840-86F7-E47998233674}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSpot.Cms", "src\Core\FSpot.Cms\FSpot.Cms.csproj", "{405E666B-3D56-4840-86F7-E47998233674}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSpot.Core.Gtk.UnitTest", "src\Core\FSpot.Core.Gtk.UnitTest\FSpot.Core.Gtk.UnitTest.csproj", "{0165FADB-6FD7-40BB-863A-100CCE980A51}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -242,6 +244,10 @@ Global
 		{405E666B-3D56-4840-86F7-E47998233674}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{405E666B-3D56-4840-86F7-E47998233674}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{405E666B-3D56-4840-86F7-E47998233674}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0165FADB-6FD7-40BB-863A-100CCE980A51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0165FADB-6FD7-40BB-863A-100CCE980A51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0165FADB-6FD7-40BB-863A-100CCE980A51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0165FADB-6FD7-40BB-863A-100CCE980A51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -284,6 +290,7 @@ Global
 		{11FB6DE2-4317-4839-B19A-4E642029A0FE} = {6DC9A109-EC89-4221-B8CD-9E88B589DBC1}
 		{71F95ED2-844B-4727-8EE5-D80901756111} = {9D75644A-DEF1-4362-8553-4B5F09783DC9}
 		{405E666B-3D56-4840-86F7-E47998233674} = {6DC9A109-EC89-4221-B8CD-9E88B589DBC1}
+		{0165FADB-6FD7-40BB-863A-100CCE980A51} = {6DC9A109-EC89-4221-B8CD-9E88B589DBC1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EA05F7A3-D58F-4080-9C14-F45345CC56D6}

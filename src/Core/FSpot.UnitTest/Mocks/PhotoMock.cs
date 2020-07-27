@@ -6,8 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using FSpot.Core;
+
 using Hyena;
+
 using Moq;
 
 namespace Mocks
