@@ -12,8 +12,8 @@ using System.Threading;
 
 using FSpot.Core;
 using FSpot.Database;
-using FSpot.Models;
 using FSpot.FileSystem;
+using FSpot.Models;
 using FSpot.Services;
 using FSpot.Settings;
 using FSpot.Thumbnail;
@@ -46,8 +46,7 @@ namespace FSpot.Import
 
 		#region IImportConroller
 
-		public void DoImport (IDb db, IBrowsableCollection photos, IList<Tag> tagsToAttach, bool duplicateDetect,
-			bool copyFiles, bool removeOriginals, Action<int, int> reportProgress, CancellationToken token)
+		public void DoImport (IDb db, IBrowsableCollection photos, IList<Tag> tagsToAttach, ImportPreferences preferences, Action<int, int> reportProgress, CancellationToken token)
 		{
 			//db.Sync = false;
 			created_directories = new Stack<SafeUri> ();
@@ -70,7 +69,7 @@ namespace FSpot.Import
 
 					reportProgress (i++, total);
 					try {
-						ImportPhoto (db, info, createdRoll, tagsToAttach, duplicateDetect, copyFiles);
+						ImportPhoto (db, info, createdRoll, tagsToAttach, preferences.DuplicateDetect, preferences.CopyFiles);
 					} catch (Exception e) {
 						Log.Debug ($"Failed to import {info.DefaultVersion.Uri}");
 						Log.DebugException (e);
@@ -78,7 +77,7 @@ namespace FSpot.Import
 					}
 				}
 
-				FinishImport (removeOriginals);
+				FinishImport (preferences.RemoveOriginals);
 			} catch (Exception e) {
 				RollbackImport (db);
 				throw;

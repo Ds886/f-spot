@@ -1091,15 +1091,15 @@ namespace FSpot
 				}
 			});
 
-			var source = new MultiImportSource (list.ToArray ());
+			var source = new MultiImportSource (list);
 			controller.ActiveSource = source;
-			controller.CopyFiles = copy;
-			controller.DuplicateDetect = true;
-			controller.RecurseSubdirectories = true;
-			controller.RemoveOriginals = false;
+			controller.Preferences.CopyFiles = copy;
+			controller.Preferences.DuplicateDetect = true;
+			controller.Preferences.RecurseSubdirectories = true;
+			controller.Preferences.RemoveOriginals = false;
 
-			var import_window = new ImportDialog (controller, Window);
-			import_window.Show ();
+			using var importWindow = new ImportDialog (controller, Window);
+			importWindow.Show ();
 
 			controller.StartImport ();
 		}
@@ -1124,8 +1124,9 @@ namespace FSpot
 					}
 				}
 			};
-			var import_window = new ImportDialog (controller, Window);
-			import_window.Show ();
+
+			using var importWindow = new ImportDialog (controller, Window);
+			importWindow.Show ();
 		}
 
 		void HandleIconViewDragDataReceived (object sender, DragDataReceivedArgs args)
