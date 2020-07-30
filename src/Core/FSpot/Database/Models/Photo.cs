@@ -125,6 +125,7 @@ namespace FSpot.Models
 
 		public Photo ()
 		{
+			Versions ??= new List<IPhotoVersion> ();
 			CreateImageFileFactory ();
 		}
 
@@ -175,25 +176,21 @@ namespace FSpot.Models
 		public void AddVersionUnsafely (uint versionId, SafeUri baseUri, string filename, string importMd5, string name, bool isProtected)
 		{
 			versions[versionId] = new PhotoVersion (this, versionId, baseUri, filename, importMd5, name, isProtected);
+			Versions.Add (versions[versionId]);
 
 			highest_version_id = Math.Max (versionId, highest_version_id);
 			changes.AddVersion (versionId);
 		}
 
-		public uint AddVersion (SafeUri base_uri, string filename, string name)
-		{
-			return AddVersion (base_uri, filename, name, false);
-		}
-
-		public uint AddVersion (SafeUri base_uri, string filename, string name, bool is_protected)
+		public uint AddVersion (SafeUri baseUri, string filename, string name, bool isProtected = false)
 		{
 			if (VersionNameExists (name))
 				throw new ApplicationException ("A version with that name already exists");
 
 			highest_version_id++;
-			string import_md5 = string.Empty; // Modified version
+			string importMd5 = string.Empty; // Modified version
 
-			versions[highest_version_id] = new PhotoVersion (this, highest_version_id, base_uri, filename, import_md5, name, is_protected);
+			versions[highest_version_id] = new PhotoVersion (this, highest_version_id, baseUri, filename, importMd5, name, isProtected);
 
 			changes.AddVersion (highest_version_id);
 			return highest_version_id;

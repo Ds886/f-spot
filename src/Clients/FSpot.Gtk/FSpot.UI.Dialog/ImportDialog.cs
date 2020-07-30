@@ -318,7 +318,7 @@ namespace FSpot.UI.Dialog
 			}
 		}
 
-		void ShowFailuresIfNeeded (List<SafeUri> files)
+		void ShowFailuresIfNeeded (IEnumerable<SafeUri> files)
 		{
 			if (Controller.FailedImports.Count == 0)
 				return;

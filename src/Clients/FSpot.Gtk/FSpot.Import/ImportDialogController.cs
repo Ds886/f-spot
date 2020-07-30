@@ -198,9 +198,8 @@ namespace FSpot.Import
 			FailedImports.Clear ();
 			FailedImports.AddRange (importer.FailedImports);
 
-			if (!token.IsCancellationRequested) {
+			if (!token.IsCancellationRequested)
 				importThread = null;
-			}
 
 			FireEvent (ImportEvent.ImportFinished);
 		}

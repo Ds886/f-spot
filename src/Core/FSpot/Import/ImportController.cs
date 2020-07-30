@@ -111,18 +111,18 @@ namespace FSpot.Import
 			// Import photo
 			var photo = db.Photos.CreateFrom (item, false, roll.Id);
 
-			bool needs_commit = false;
+			bool needsCommit = false;
 
 			// Add tags
 			if (tagsToAttach.Count > 0) {
 				TagService.Instance.Add (photo, tagsToAttach);
-				needs_commit = true;
+				needsCommit = true;
 			}
 
 			// Import XMP metadata
-			needs_commit |= metadata_importer.Import (photo, item);
+			needsCommit |= metadata_importer.Import (photo, item);
 
-			if (needs_commit) {
+			if (needsCommit) {
 				db.Photos.Commit (photo);
 			}
 

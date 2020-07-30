@@ -112,7 +112,7 @@ namespace FSpot.Database
 				// rename original version to "Original" if we import default version only
 				// this applies when a version is detached from another photo
 				string name = defaultVersionOnly && versionId == Photo.OriginalVersionId ? Catalog.GetString ("Original") : version.Name;
-				photo.AddVersionUnsafely (versionId++, new SafeUri (version.BaseUri), version.Filename, version.ImportMd5, name, true);
+				photo.AddVersionUnsafely (versionId++, version.Uri.GetBaseUri (), version.Filename, version.ImportMd5, name, true);
 				InsertVersion (photo, photo.Versions.Last () as PhotoVersion);
 			}
 			photo.DefaultVersionId = versionId - 1;
