@@ -8,7 +8,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
-
+using System.Linq;
 using Gtk;
 
 using Mono.Unix;
@@ -146,8 +146,7 @@ namespace FSpot
 							}
 
 							var versionIds = photo.VersionIds;
-							Array.Reverse (versionIds);
-							foreach (uint versionId in versionIds) {
+							foreach (uint versionId in versionIds.Reverse ()) {
 								photo.DeleteVersion (versionId, true, true);
 							}
 							store.Remove (photo);

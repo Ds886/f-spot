@@ -84,10 +84,7 @@ namespace FSpot.Import
 			ProgressUpdated?.Invoke (current, total);
 		}
 
-
 		#endregion
-
-		#region Source Switching
 
 		ImportSource activeSource;
 		public ImportSource ActiveSource {
@@ -105,8 +102,6 @@ namespace FSpot.Import
 				return activeSource;
 			}
 		}
-
-		#endregion
 
 		#region Photo Scanning
 

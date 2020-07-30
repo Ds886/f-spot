@@ -4,16 +4,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
+
 using FSpot.Core;
 using FSpot.FileSystem;
 using FSpot.Imaging;
 using FSpot.Services;
 using FSpot.Settings;
 using FSpot.Utils;
+
 using Hyena;
+
 using Mono.Unix;
 
 namespace FSpot.Models
@@ -63,11 +67,6 @@ namespace FSpot.Models
 			return Id.CompareTo (other.Id);
 		}
 
-
-
-
-
-
 		//DateTime time;
 		//public DateTime Time {
 		//	get { return time; }
@@ -80,7 +79,6 @@ namespace FSpot.Models
 		//	}
 		//}
 
-
 		//public uint DefaultVersionId {
 		//	get { return default_version_id; }
 		//	set {
@@ -91,7 +89,6 @@ namespace FSpot.Models
 		//		changes.DefaultVersionIdChanged = true;
 		//	}
 		//}
-
 
 		//string description;
 		//public string Description {
@@ -125,13 +122,6 @@ namespace FSpot.Models
 		//		changes.RatingChanged = true;
 		//	}
 		//}
-
-
-
-
-
-
-
 
 		public Photo ()
 		{
@@ -475,6 +465,5 @@ namespace FSpot.Models
 			Rating = that.Rating;
 			TagService.Instance.Add (this, that.Tags);// AddTag (that.Tags);
 		}
-
 	}
 }

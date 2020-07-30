@@ -31,7 +31,7 @@ namespace FSpot
 		{
 			DateTime date = DateFromIndex (min);
 
-			GlassSet?.Invoke (this, query.LookupItem (date));
+			GlassSet?.Invoke (this, Query.LookupItem (date));
 		}
 
 		public void SetLimits (int min, int max)
@@ -40,14 +40,14 @@ namespace FSpot
 
 			DateTime end = DateFromIndex (max);
 
-			end = order_ascending ? end.AddMonths (1) : end.AddMonths (-1);
+			end = OrderAscending ? end.AddMonths (1) : end.AddMonths (-1);
 
 			SetLimits (start, end);
 		}
 
 		public void SetLimits (DateTime start, DateTime end)
 		{
-			query.Range = (start > end) ? new DateRange (end, start) : new DateRange (start, end);
+			Query.Range = (start > end) ? new DateRange (end, start) : new DateRange (start, end);
 		}
 
 		public override int Count ()
@@ -64,14 +64,14 @@ namespace FSpot
 		{
 			DateTime start = DateFromIndex (item);
 
-			if ((start.Month == 12 && !order_ascending) || (start.Month == 1 && order_ascending))
+			if ((start.Month == 12 && !OrderAscending) || (start.Month == 1 && OrderAscending))
 				return start.Year.ToString ();
 			return null;
 		}
 
 		public override int Value (int item)
 		{
-			if (order_ascending)
+			if (OrderAscending)
 				return years[startyear + item / 12][item % 12];
 
 			return years[endyear - item / 12][11 - item % 12];
@@ -82,7 +82,7 @@ namespace FSpot
 			item = Math.Max (item, 0);
 			item = Math.Min (years.Count * 12 - 1, item);
 
-			if (order_ascending)
+			if (OrderAscending)
 				return DateFromIndexAscending (item);
 
 			return DateFromIndexDescending (item);
@@ -113,7 +113,7 @@ namespace FSpot
 
 		public override int IndexFromPhoto (IPhoto photo)
 		{
-			if (order_ascending)
+			if (OrderAscending)
 				return IndexFromDateAscending (photo.UtcTime);
 
 			return IndexFromDateDescending (photo.UtcTime);
@@ -121,7 +121,7 @@ namespace FSpot
 
 		public int IndexFromDate (DateTime date)
 		{
-			if (order_ascending)
+			if (OrderAscending)
 				return IndexFromDateAscending (date);
 
 			return IndexFromDateDescending (date);
@@ -158,7 +158,7 @@ namespace FSpot
 		public override IPhoto PhotoFromIndex (int item)
 		{
 			DateTime start = DateFromIndex (item);
-			return query[query.LookupItem (start)];
+			return Query[Query.LookupItem (start)];
 
 		}
 
@@ -168,6 +168,7 @@ namespace FSpot
 		protected override void Reload ()
 		{
 			timer = Log.DebugTimerStart ();
+			// FIXME, get rid of Thread
 			var reload = new Thread (DoReload);
 			reload.IsBackground = true;
 			reload.Priority = ThreadPriority.Lowest;
@@ -178,7 +179,7 @@ namespace FSpot
 		void DoReload ()
 		{
 			Thread.Sleep (200);
-			var years_tmp = query.Store.PhotosPerMonth ();
+			var years_tmp = Query.Store.PhotosPerMonth ();
 			int startyear_tmp = int.MaxValue;
 			int endyear_tmp = int.MinValue;
 

@@ -6,11 +6,16 @@
 using System;
 using System.IO;
 using System.Linq;
+
 using FSpot.Database;
 using FSpot.Mocks;
+
 using Hyena;
+
 using Mono.Unix;
+
 using Moq;
+
 using NUnit.Framework;
 
 namespace FSpot
