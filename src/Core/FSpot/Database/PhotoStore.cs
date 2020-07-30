@@ -13,14 +13,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Mono.Unix;
-
 using FSpot.Core;
 using FSpot.Models;
 using FSpot.Query;
 using FSpot.Utils;
 
 using Hyena;
+using Mono.Unix;
 
 namespace FSpot.Database
 {
@@ -95,48 +94,33 @@ namespace FSpot.Database
 
 		public Photo CreateFrom (IPhoto item, bool defaultVersionOnly, Guid rollId)
 		{
-			//Photo photo = new Photo {
-			//	UtcTime = item.Time,
-			//	BaseUri = item.DefaultVersion.BaseUri,
-			//	Filename = item.DefaultVersion.Filename,
-			//	Description = item.Description ?? string.Empty,
-			//	RollId = rollId,
-			//	DefaultVersionId = ???,
-			//	Rating = 0
-			//};
+			var photo = new Photo {
+				UtcTime = item.UtcTime,
+				BaseUri = item.DefaultVersion.BaseUri,
+				Filename = item.DefaultVersion.Filename,
+				Description = item.Description ?? string.Empty,
+				RollId = rollId,
+				DefaultVersionId = Photo.OriginalVersionId,
+				Rating = 0
+			};
 
-			//Context.Photos.Add (photo);
-			//Context.SaveChanges ();
-			//uint id = (uint)Database.Execute (
-			//	new HyenaSqliteCommand (
-			//		"INSERT INTO photos (time, base_uri, filename, description, roll_id, default_version_id, rating) " +
-			//		"VALUES (?, ?, ?, ?, ?, ?, ?)",
-			//		item.Time,
-			//		item.DefaultVersion.BaseUri.ToString (),
-			//		item.DefaultVersion.Filename,
-			//		description,
-			//		rollId,
-			//		Photo.OriginalVersionId,
-			//		"0"
-			//	));
+			Context.Photos.Add (photo);
 
-			//photo = new Photo (imageFileFactory, thumbnailService, id, unix_time);
+			uint versionId = Photo.OriginalVersionId;
+			var versions = defaultVersionOnly ? new List<IPhotoVersion> { item.DefaultVersion } : item.Versions;
+			foreach (IPhotoVersion version in versions) {
+				// rename original version to "Original" if we import default version only
+				// this applies when a version is detached from another photo
+				string name = defaultVersionOnly && versionId == Photo.OriginalVersionId ? Catalog.GetString ("Original") : version.Name;
+				photo.AddVersionUnsafely (versionId++, new SafeUri (version.BaseUri), version.Filename, version.ImportMd5, name, true);
+				InsertVersion (photo, photo.Versions.Last () as PhotoVersion);
+			}
+			photo.DefaultVersionId = versionId - 1;
+			photo.AllVersionsLoaded = true;
 
-			//uint versionId = Photo.OriginalVersionId;
-			//var versions = defaultVersionOnly ? new[] { item.DefaultVersion } : item.Versions;
-			//foreach (IPhotoVersion version in versions) {
-			//	// rename original version to "Original" if we import default version only
-			//	// this applies when a version is detached from another photo
-			//	string name = defaultVersionOnly && versionId == Photo.OriginalVersionId ? Catalog.GetString ("Original") : version.Name;
-			//	photo.AddVersionUnsafely (versionId++, version.BaseUri, version.Filename, version.ImportMD5, name, true);
-			//	InsertVersion (photo, photo.Versions.Last () as PhotoVersion);
-			//}
-			//photo.DefaultVersionId = versionId - 1;
-			//photo.AllVersionsLoaded = true;
-
-			//EmitAdded (photo);
-			//return photo;
-			return null;
+			Context.SaveChanges ();
+			EmitAdded (photo);
+			return photo;
 		}
 
 		void InsertVersion (BaseDbSet photo, PhotoVersion version)

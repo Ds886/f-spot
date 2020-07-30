@@ -172,12 +172,12 @@ namespace FSpot.Models
 
 		// This doesn't check if a version of that name already exists,
 		// it's supposed to be used only within the Photo and PhotoStore classes.
-		public void AddVersionUnsafely (uint version_id, SafeUri base_uri, string filename, string import_md5, string name, bool is_protected)
+		public void AddVersionUnsafely (uint versionId, SafeUri baseUri, string filename, string importMd5, string name, bool isProtected)
 		{
-			versions[version_id] = new PhotoVersion (this, version_id, base_uri, filename, import_md5, name, is_protected);
+			versions[versionId] = new PhotoVersion (this, versionId, baseUri, filename, importMd5, name, isProtected);
 
-			highest_version_id = Math.Max (version_id, highest_version_id);
-			changes.AddVersion (version_id);
+			highest_version_id = Math.Max (versionId, highest_version_id);
+			changes.AddVersion (versionId);
 		}
 
 		public uint AddVersion (SafeUri base_uri, string filename, string name)
